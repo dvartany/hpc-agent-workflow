@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>HPC Agent Dashboard</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <main class="app">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Slurm workflow</p>
+          <h1>HPC Agent Dashboard</h1>
+        </div>
+        <div class="toolbar" aria-label="Primary actions">
+          <button class="icon-button" id="themeBtn" title="Toggle dark mode" aria-label="Toggle dark mode">🌙</button>
+          <button class="icon-button" id="refreshBtn" title="Refresh state" aria-label="Refresh state">↻</button>
+          <button class="primary" id="saveBtn">Save Config</button>
+        </div>
+      </header>
+
+      <section class="status-strip" aria-label="Job overview">
+        <div class="metric">
+          <span>Cluster</span>
+          <strong id="clusterTarget">Not configured</strong>
+        </div>
+        <div class="metric">
+          <span>Job</span>
+          <strong id="jobId">None</strong>
+        </div>
+        <div class="metric">
+          <span>Monitor</span>
+          <strong id="monitorState">Stopped</strong>
+        </div>
+        <div class="metric">
+          <span>Latest</span>
+          <strong id="latestStatus">No status yet</strong>
+        </div>
+      </section>
+
+      <section class="queue-strip" id="queueStrip" aria-label="Queue overview">
+        <div class="queue-stat" data-state="PENDING">
+          <span>Pending</span>
+          <strong id="queuePending">-</strong>
+        </div>
+        <div class="queue-stat" data-state="RUNNING">
+          <span>Running</span>
+          <strong id="queueRunning">-</strong>
+        </div>
+        <div class="queue-stat" data-state="COMPLETED">
+          <span>Completed</span>
+          <strong id="queueCompleted">-</strong>
+        </div>
+        <div class="queue-stat" data-state="FAILED">
+          <span>Failed</span>
+          <strong id="queueFailed">-</strong>
+        </div>
+        <div class="queue-stat" data-state="OTHER">
+          <span>Other</span>
+          <strong id="queueOther">-</strong>
+        </div>
+      </section>
+
+      <form id="configForm" class="workspace">
+        <div class="setup-section">
+          <aside class="operations" aria-label="Job controls">
+            <div class="pipeline-status">
+              <span class="phase" data-phase="preprocess">Pre-process</span>
+              <span class="arrow">→</span>
+              <span class="phase" data-phase="submit">Submit</span>
+              <span class="arrow">→</span>
+              <span class="phase" data-phase="analyze">Analyze</span>
+              <span class="arrow">→</span>
+              <span class="phase" data-phase="sync">Sync</span>
+            </div>
+            <div class="job-entry">
+              <label>Job ID <input id="manualJobId" autocomplete="off" placeholder="Optional"></label>
+            </div>
+            <div class="button-grid">
+              <button id="monitorBtn">Start Monitor</button>
+              <button id="stopBtn">Stop</button>
+              <button id="preprocessBtn">Pre-process</button>
+              <button id="submitBtn">Submit</button>
+              <button id="analyzeBtn">Analyze</button>
+              <button id="stopAnalysisBtn">Stop Analysis</button>
+              <button id="syncBtn">Sync</button>
+              <button id="statusBtn">Queue</button>
+            </div>
+            <pre class="command-output" id="commandOutput" aria-live="polite"></pre>
+          </aside>
+
+          <div class="config-grid">
+            <div class="col-group">
+              <fieldset>
+                <legend>Pre-processing</legend>
+                <label>Mode
+                  <select name="preprocess.mode">
+                    <option value="local">Local command</option>
+                    <option value="submit">Submit script</option>
+                    <option value="python" selected>Remote Python</option>
+                  </select>
+                </label>
+                <label class="wide" data-show-for-pre="local">Command <input name="preprocess.command" autocomplete="off"></label>
+                <label data-show-for-pre="submit" hidden>Slurm script <input name="preprocess.slurm_script" autocomplete="off"></label>
+                <label class="wide" data-show-for-pre="python">Python script <input name="preprocess.python_script" autocomplete="off"></label>
+              </fieldset>
+
+              <fieldset>
+                <legend>Job</legend>
+                <label>Script filename <input name="job.script" autocomplete="off"></label>
+                <label hidden>Job ID file <input name="job.job_id_file" autocomplete="off"></label>
+                <label>Poll seconds <input name="reporting.poll_interval_seconds" inputmode="numeric"></label>
+              </fieldset>
+            </div>
+
+            <div class="col-group" style="grid-column: 2">
+              <fieldset id="analysisFieldset">
+                <legend>Analysis</legend>
+                <label>Mode
+                  <select name="analysis.mode">
+                    <option value="local">Local command</option>
+                    <option value="submit">Submit script</option>
+                    <option value="python">Remote Python</option>
+                  </select>
+                </label>
+                <label class="wide" data-show-for="local">Command <input name="analysis.command" autocomplete="off"></label>
+                <label data-show-for="submit" hidden>Slurm script <input name="analysis.slurm_script" autocomplete="off"></label>
+                <label class="wide" data-show-for="python" hidden>Python script <input name="analysis.python_script" autocomplete="off"></label>
+                <label hidden>Analysis job ID file <input name="analysis.job_id_file" autocomplete="off"></label>
+              </fieldset>
+
+              <fieldset id="resultsFieldset">
+                <legend>Results</legend>
+                <label>Remote results <input name="sync.remote_results_path" autocomplete="off"></label>
+                <label>Local results <input name="sync.local_results_path" autocomplete="off"></label>
+              </fieldset>
+            </div>
+          </div>
+        </div>
+
+        <div style="grid-column: 2; display: flex; flex-direction: column; gap: 0;">
+          <fieldset>
+            <legend>Cluster</legend>
+            <label>HPC preset
+              <select id="hpcPreset">
+                <option value="">Custom</option>
+                <option value="nersc">NERSC (Perlmutter)</option>
+                <option value="polaris">Polaris (ALCF)</option>
+                <option value="tacc">TACC (Frontera)</option>
+              </select>
+            </label>
+            <label>Host <input name="cluster.host" autocomplete="off"></label>
+            <label>User <input name="cluster.user" autocomplete="off"></label>
+            <label>Remote workdir <input name="cluster.remote_workdir" autocomplete="off"></label>
+          </fieldset>
+
+          <fieldset id="jobsFieldset">
+            <legend>Job scripts</legend>
+            <div id="jobScriptsList"></div>
+            <button type="button" id="addJobScriptBtn" class="add-btn">+ Add script</button>
+          </fieldset>
+
+          <div class="logs-compact">
+            <div class="log-panel">
+              <div class="section-title">
+                Status Log <span id="statusLogPath"></span>
+              </div>
+              <pre id="statusLog"></pre>
+            </div>
+            <div class="log-panel">
+              <div class="section-title">
+                Run Log <span id="runLogPath"></span>
+              </div>
+              <pre id="runLog"></pre>
+            </div>
+          </div>
+        </div>
+      </form>
+    </main>
+    <script src="/app.js"></script>
+  </body>
+</html>

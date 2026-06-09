@@ -1,0 +1,40 @@
+[cluster]
+# Example:
+# host = "login.frontera.tacc.utexas.edu"
+host = "your-login-host.example.edu"
+user = "your_username"
+ssh_key = ""
+remote_workdir = "/scratch/your_project/run_001"
+remote_script_path = "/scratch/your_project/scripts"
+scheduler = "slurm"
+
+[job]
+script = "job.sh"
+job_id_file = ".hpc_agent_job_id"
+
+[sync]
+enabled = true
+# Relative to remote_workdir (or absolute path starting with /)
+remote_results_path = "results/"
+local_results_path = "./results/run_001/"
+
+[analysis]
+enabled = true
+# local = run command on this machine after syncing results.
+# submit = submit slurm_script with sbatch and monitor it.
+# python = run python_script directly over SSH in remote_workdir, without sbatch.
+mode = "local"
+command = "python3 analyze.py ./results/run_001/"
+slurm_script = "analysis_job.sh"
+python_script = "parfile_restart.py"
+job_id_file = ".hpc_agent_analysis_job_id"
+
+[jobs]
+# Optional: list of multiple scripts to submit together.
+# Falls back to job.script if this section is empty.
+# script_0 = "job_a.sh"
+# script_1 = "job_b.sh"
+
+[reporting]
+poll_interval_seconds = 900
+status_log = "./hpc-agent-status.log"

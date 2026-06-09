@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+.DS_Store
+.hpc_agent_*
+dashboard-run.log
+hpc-agent-status.log

@@ -1,0 +1,27 @@
+[cluster]
+host = "frontera.tacc.utexas.edu"
+user = "tg848932"
+remote_workdir = "/scratch2/05594/tg848932/2023/F2F/s17_new_mpi_decay"
+
+[job]
+script = "batch.sub"
+job_id_file = ".hpc_agent_job_id"
+
+[sync]
+remote_results_path = "opencode_automation/entr_plotter"
+local_results_path = "results/run_001"
+
+[analysis]
+mode = "python"
+slurm_script = "analysis_job.sh"
+python_script = "opencode_automation/job_config.py"
+job_id_file = ".hpc_agent_analysis_job_id"
+
+[reporting]
+poll_interval_seconds = 900
+
+[preprocess]
+mode = "python"
+python_script = "parfile_restart.py"
+
+[jobs]
