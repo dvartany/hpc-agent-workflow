@@ -42,3 +42,8 @@
 - Stop Analysis now captures and displays cancel command output in response (mirrors stop-monitor pattern)
 - Reverted two CSS layout attempts for log positioning (user kept original inline flex column layout)
 - Took dashboard screenshot for slide deck (task paused before completion)
+
+## 2026-06-09
+
+- Fixed git push failure (HTTP 400) by setting `http.postBuffer=524288000` for large PNG history
+- Added step 4 to AGENTS.md: commit and push to GitHub on session closeout

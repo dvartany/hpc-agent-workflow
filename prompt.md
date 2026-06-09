@@ -56,16 +56,9 @@ Start Monitor → Stop | Pre-process → Submit → Analyze → Stop Analysis | 
 
 When `[jobs]` has entries, each script runs in `<remote_workdir>/<script_stem>/`. `poll()` handles comma-separated IDs. Falls back to single `job.script` with no subdir when `[jobs]` is empty.
 
-## Recent changes this session
+## Session closeout
 
-- `run_preprocess` auto-skips when no python_script/command/slurm_script is configured (was blocking `run` pipeline)
-- Dashboard auto-frees port 8765 on startup (`free_port()`)
-- Analysis job ID saved after sbatch in submit mode so Stop Analysis can scancel it
-- Python mode parses stdout for "Submitted batch job X" and saves to analysis job ID file
-- Scripts resolved relative to `remote_workdir` with directory component appended to CD path (both python and submit modes)
-- All analyze/preprocess modes use managed processes (enables Stop buttons)
-- Command output streams run log updates every 10s while monitor/analysis is running
-- Stop Analysis captures cancel output in response
+When concluding, update README.md, log.md, prompt.md, then commit and push. Use `git -c http.postBuffer=524288000 push` if HTTP 400 occurs (large PNGs in history). Remote is `https://github.com/dvartany/hpc-agent-workflow.git`.
 
 ## Known issues / blockers
 

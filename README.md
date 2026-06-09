@@ -35,11 +35,6 @@ python3 hpc_agent.py <cmd>    # run from CLI: submit, status, cancel, poll, sync
 
 When `[jobs]` has entries (via the Job scripts list), each script runs its full pipeline in `<remote_workdir>/<script_stem>/`. Falls back to `job.script` with no subdir when `[jobs]` is empty.
 
-## Recent Changes
+## Session Closeout
 
-- Preprocess auto-skips when no mode-specific script/command is configured
-- Dashboard auto-frees port 8765 on startup (kills existing listener)
-- Stop Analysis scancels the analysis job ID (saved on sbatch or parsed from Python script stdout)
-- Remote Python scripts CD into `<remote_workdir>/<script_dir>` before execution
-- All analysis/preprocess modes use managed background processes (not just submit)
-- Command output streams latest run log lines while monitor/analysis is running
+When concluding a session, update `AGENTS.md` steps — commit, push, use `git -c http.postBuffer=524288000 push` if large files cause HTTP 400.

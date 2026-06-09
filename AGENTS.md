@@ -36,6 +36,22 @@ Overwrite with a comprehensive resume prompt for a new opencode session. Include
 
 This is the single file someone opening a fresh opencode window should read first to continue work without asking questions.
 
+## 4. Push to GitHub
+
+After updating all three files, commit and push:
+
+```bash
+git add -A && git commit -m "chore: update session closeout files" && git push
+```
+
+If the push fails with HTTP 400, increase the git buffer:
+
+```bash
+git -c http.postBuffer=524288000 push
+```
+
+The remote URL is `https://github.com/dvartany/hpc-agent-workflow.git` (no embedded token).
+
 ---
 
-If the user didn't do anything meaningful (just browsed, asked questions, etc.), skip updating all three files.
+If the user didn't do anything meaningful (just browsed, asked questions, etc.), skip updating all three files and the git push.
