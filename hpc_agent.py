@@ -59,10 +59,13 @@ def load_config(path: Path) -> dict[str, Any]:
         if line.startswith("[") and line.endswith("]"):
             section = config.setdefault(line[1:-1].strip(), {})
             continue
-        if section is None or "=" not in line:
+        if "=" not in line:
             raise ValueError(f"Invalid config line: {raw_line}")
         key, val = (p.strip() for p in line.split("=", 1))
-        section[key] = parse_scalar(val)
+        if section is None:
+            config[key] = parse_scalar(val)
+        else:
+            section[key] = parse_scalar(val)
     return config
 
 
@@ -423,7 +426,8 @@ def main() -> int:
     pp.add_argument("--job-id")
     ap = sub.add_parser("poll-analysis")
     ap.add_argument("--job-id")
-    sub.add_parser("run")
+    r = sub.add_parser("run")
+    r.add_argument("--restart", action="store_true", help="Auto-restart pipeline on completion")
     sub.add_parser("sync")
     sub.add_parser("analyze")
     sub.add_parser("preprocess")
@@ -471,35 +475,40 @@ def main() -> int:
                 log(config, "No job scripts configured.")
                 return 1
             use_subdirs = bool(config.get("jobs", {}))
+            restart = getattr(args, "restart", False)
             overall_ok = True
             try:
-                for script in scripts:
-                    try:
-                        if use_subdirs:
-                            subdir = _script_subdir(script)
-                            sc = _with_subdir(config, subdir)
-                            log(config, f"--- Running pipeline for {script} in {subdir}/ ---")
-                        else:
-                            sc = config
-                            log(config, f"--- Running pipeline for {script} ---")
-                        set_phase("preprocess")
-                        run_preprocess(sc)
-                        set_phase("submit")
-                        job_id = submit(sc, script=script)
-                        set_phase("monitor")
-                        state = poll(sc, job_id)
-                        if state in SUCCESS_STATES:
-                            set_phase("analysis")
-                            run_analysis(sc)
-                            set_phase("sync")
-                            sync_results(sc)
-                            log(config, f"Pipeline completed for {script}.")
-                        else:
-                            log(config, f"Job for {script} ended with {state}; skipping analysis/sync.")
+                while True:
+                    for script in scripts:
+                        try:
+                            if use_subdirs:
+                                subdir = _script_subdir(script)
+                                sc = _with_subdir(config, subdir)
+                                log(config, f"--- Running pipeline for {script} in {subdir}/ ---")
+                            else:
+                                sc = config
+                                log(config, f"--- Running pipeline for {script} ---")
+                            set_phase("preprocess")
+                            run_preprocess(sc)
+                            set_phase("submit")
+                            job_id = submit(sc, script=script)
+                            set_phase("monitor")
+                            state = poll(sc, job_id)
+                            if state in SUCCESS_STATES:
+                                set_phase("analysis")
+                                run_analysis(sc)
+                                set_phase("sync")
+                                sync_results(sc)
+                                log(config, f"Pipeline completed for {script}.")
+                            else:
+                                log(config, f"Job for {script} ended with {state}; skipping analysis/sync.")
+                                overall_ok = False
+                        except Exception as exc:
+                            log(config, f"Pipeline failed for {script}: {exc}")
                             overall_ok = False
-                    except Exception as exc:
-                        log(config, f"Pipeline failed for {script}: {exc}")
-                        overall_ok = False
+                    if not restart:
+                        break
+                    log(config, "--- Auto-restart enabled; restarting pipeline ---")
             finally:
                 clear_phase()
             return 0 if overall_ok else 1

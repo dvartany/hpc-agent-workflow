@@ -47,3 +47,14 @@
 
 - Fixed git push failure (HTTP 400) by setting `http.postBuffer=524288000` for large PNG history
 - Added step 4 to AGENTS.md: commit and push to GitHub on session closeout
+
+## 2026-06-10
+
+- Created `create_slides.py` — generates single-slide PPTX with dashboard screenshot
+- Iterated slide design through multiple rounds: screenshot on left, right column with motivation/process/challenges
+- Settled on ASTRA acronym (Automated Scheduling & Tracking for Research Applications)
+- Took fresh dashboard screenshot via Playwright headless Chromium (also used Desktop screenshot)
+- Text format: 1-sentence summary per section + short bullet list, non-technical language
+- Added "Stop babysitting individual batch jobs" closing line
+- Added detailed dashboard caption below screenshot describing left/right panels
+- Added Auto-restart feature: checkbox next to phase chain, `--restart` flag on `hpc_agent.py run`, top-level `restart = true/false` in config.toml, infinite pipeline loop until Stop

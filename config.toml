@@ -1,3 +1,5 @@
+restart = true
+
 [cluster]
 host = "frontera.tacc.utexas.edu"
 user = "tg848932"

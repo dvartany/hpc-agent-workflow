@@ -103,6 +103,10 @@ def write_config(data: dict[str, Any]) -> None:
     """Serialize config dict back to TOML-ish config.toml."""
     sections = ["cluster", "job", "sync", "analysis", "reporting", "preprocess", "jobs"]
     lines: list[str] = []
+    # Top-level restart flag
+    restart = data.get("restart", False)
+    lines.append(f"restart = {'true' if restart else 'false'}")
+    lines.append("")
     for section in sections:
         lines.append(f"[{section}]")
         for key, value in data.get(section, {}).items():
@@ -139,6 +143,7 @@ def config_snapshot() -> dict[str, Any]:
         "reporting": config.get("reporting", {}),
         "preprocess": config.get("preprocess", {}),
         "jobs": config.get("jobs", {}),
+        "restart": config.get("restart", False),
     }
 
 
@@ -275,6 +280,9 @@ class DashboardHandler(BaseHTTPRequestHandler):
             log_to_status("Analysis stopped.")
         elif action == "start-monitor":
             cmd = agent_cmd("run", *(["--job-id", job_id] if job_id else []))
+            config_data = config_snapshot()
+            if config_data.get("restart"):
+                cmd.append("--restart")
             result = MONITOR.start(cmd)
         elif action == "stop-monitor":
             try:

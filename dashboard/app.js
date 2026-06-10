@@ -34,6 +34,7 @@ const buttons = Array.from(document.querySelectorAll("button"));
 let latestState = null;
 
 const fields = [
+  "restart",
   "cluster.host",
   "cluster.user",
   "cluster.ssh_key",
