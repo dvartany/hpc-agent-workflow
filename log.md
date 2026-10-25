@@ -93,3 +93,5 @@
 - Interval times/steps now scale from checkpoint-stored values (`checkpoint_value * (new_xmin / checkpoint_xmin) * 1.3`), fixing the compounded `0.0856`/`0.2568` values
 - Applied on Perlmutter: `iProcs 126 -> 123`, `checkpointFileIntervalTime 0.0856161 -> 0.0177376`, `plotFileIntervalTime 0.256848 -> 0.0532129`; second run reported no changes; backup `flash.par.bak.before_iprocs_fix`
 - Dashboard restarted on http://127.0.0.1:8765 with Perlmutter config
+- Changed old-value history from separate `# old:` lines to an inline comment on the rewritten line (e.g. `iProcs =  123 #126`); legacy `# old:` lines are removed automatically
+- Applied on Perlmutter: `iProcs =  123 #126`, no extra history lines; rerun reports no changes; backup `flash.par.bak.before_inline_old_comment`

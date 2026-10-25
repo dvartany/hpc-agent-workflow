@@ -28,8 +28,9 @@ Unlike the original, this version:
   * parses the shock-finder output actually produced on Perlmutter,
   * recomputes iProcs and interval values from the checkpoint's runtime
     parameters, so repeated pre-process runs are idempotent,
-  * preserves existing inline comments instead of appending the old value on
-    every auto-restart iteration,
+  * appends the replaced value inline as a ``#<old>`` comment instead of
+    creating extra history lines, and preserves existing inline comments,
+  * removes legacy ``# old:`` lines left by earlier versions,
   * writes ``flash.par`` atomically after making ``flash.par.bak``,
   * exits nonzero on failure so the dashboard stops the pipeline.
 """
@@ -48,6 +49,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 
 KEY_RE = re.compile(r"^(\s*)([A-Za-z0-9_]+)(\s*=\s*)(.*)$")
+LEGACY_OLD_RE = re.compile(r"^\s*# old: ")
 DEFAULT_SHOCK_MODULE = "python/3.12-26.1.0"
 MASS_CONSERVATION_RTOL = 1.0e-6
 
@@ -73,9 +75,13 @@ def parse_value(raw):
     return value.strip().strip("'\"")
 
 
-def replace_value(line, new_value):
-    # type: (str, str) -> str
-    """Replace the value in a ``key = value`` line, keeping spacing + comment."""
+def replace_value(line, new_value, old_value=None):
+    # type: (str, str, Optional[str]) -> str
+    """Replace the value in a ``key = value`` line, keeping spacing + comment.
+
+    When ``old_value`` is given, it is appended to the same line as a trailing
+    comment (for example ``iProcs =  123 #126``).
+    """
     match = KEY_RE.match(line)
     if not match:
         return line
@@ -85,19 +91,17 @@ def replace_value(line, new_value):
     leading_ws = value_part[: len(value_part) - len(value_part.lstrip())]
     trailing_ws = value_part[len(value_part.rstrip()) :]
     updated = "{}{}{}{}{}{}".format(lead, key, eq, leading_ws, new_value, trailing_ws)
-    if comment:
+    if old_value is not None:
+        if not trailing_ws:
+            updated += " "
+        updated += "#" + old_value
+        if comment:
+            updated += " " + comment
+    elif comment:
         if not trailing_ws:
             updated += " "
         updated += comment
     return updated + newline
-
-
-def comment_old_line(line):
-    # type: (str) -> str
-    """Return a commented copy of a ``key = value`` line for change history."""
-    body = line.rstrip("\n")
-    indent = body[: len(body) - len(body.lstrip())]
-    return indent + "# old: " + body.lstrip() + "\n"
 
 
 def find_workdir(explicit):
@@ -496,6 +500,9 @@ def rewrite_params(
             "Checkpoint runtime parameters are required to compute the new "
             "values; refusing to use flash.par."
         )
+    removed_old_lines = sum(1 for line in lines if LEGACY_OLD_RE.match(line))
+    if removed_old_lines:
+        lines = [line for line in lines if not LEGACY_OLD_RE.match(line)]
     chk_iprocs = int(chk_params["iprocs"])
     chk_xmin = float(chk_params["xmin"])
     chk_chk_interval = float(chk_params.get("checkpointfileintervaltime", 0) or 0)
@@ -578,8 +585,7 @@ def rewrite_params(
         if old_value == new_value:
             updated.append(line)
             continue
-        updated.append(comment_old_line(line))
-        updated.append(replace_value(line, new_value))
+        updated.append(replace_value(line, new_value, old_value))
         changes.append(
             {
                 "key": key,
@@ -595,6 +601,7 @@ def rewrite_params(
         "prev_chk": prev_chk,
         "prev_plt": prev_plt,
         "chk_params": chk_params,
+        "removed_old_lines": removed_old_lines,
         "interval_scale": interval_scale,
     }
 
@@ -755,7 +762,8 @@ def main():
     )
     updated_lines = result["lines"]
     changes = result["changes"]
-    changed_lines = len(changes) * 2
+    removed_old_lines = result["removed_old_lines"]
+    changed_lines = len(changes) + removed_old_lines
 
     print(
         "iProcs: checkpoint {} - skip_num {} = {}".format(
@@ -777,7 +785,7 @@ def main():
         )
     )
     if changes:
-        print("changes (old values kept as '# old:' lines):")
+        print("changes (old value appended in-line as '#old'):")
         for change in changes:
             print(
                 "  {}: {} -> {}".format(
@@ -786,6 +794,8 @@ def main():
             )
     else:
         print("no parameter values changed.")
+    if removed_old_lines:
+        print("removed {} legacy '# old:' line(s).".format(removed_old_lines))
 
     if args.dry_run:
         print(
@@ -794,7 +804,7 @@ def main():
         )
         return 0
 
-    if not changes:
+    if not changes and not removed_old_lines:
         print("no updates needed; {} unchanged.".format(param_path))
         return 0
 
