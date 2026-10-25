@@ -60,7 +60,8 @@ Runs on the login node as the first pipeline phase. From the remote workdir it:
 
 1. Runs `shock_finder_v4.py` (auto-finds it; uses a module-loaded Python with `h5py`/`scipy` when the system `python3` lacks them).
 2. Checks the `Prev Total Mass, New Total Mass` conservation line (relative tolerance `1e-6`, residual printed).
-3. Updates `flash.par`: `restart`, latest checkpoint/plot numbers, `xmin`, `point_mass`, `iProcs`, `skip_num`, `do_move`, and interval scaling.
-4. Backs up `flash.par.bak` and writes atomically. Exits nonzero on failure so the pipeline stops.
+3. Skips when no new simulation has run: if `flash.par`'s `checkpointFileNumber` already equals the latest checkpoint, it exits before the shock finder. `--force` re-processes anyway.
+4. Updates `flash.par`: `restart`, latest checkpoint/plot numbers, `xmin`, `point_mass`, `iProcs`, `skip_num`, `do_move`, and interval scaling. Each changed value is logged (`old -> new`) and the previous line is kept as `# old: <line>`.
+5. Backs up `flash.par.bak` and writes atomically. Exits nonzero on failure so the pipeline stops.
 
-Useful flags: `--dry-run` (no write), `--shock-module`, `--shock-python`, `--shock-finder`. By default it auto-detects `shock_finder_v4.py` in the workdir; pass `--shock-finder` only to override. `parfile_restart.py` is deployed to the Perlmutter workdir and enabled in `config.toml`.
+Useful flags: `--dry-run` (no write), `--force` (re-process an already-processed checkpoint; reapplies `iProcs`/interval scaling), `--shock-module`, `--shock-python`, `--shock-finder`. By default it auto-detects `shock_finder_v4.py` in the workdir; pass `--shock-finder` only to override. `parfile_restart.py` is deployed to the Perlmutter workdir and enabled in `config.toml`.

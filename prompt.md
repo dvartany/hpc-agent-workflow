@@ -75,9 +75,11 @@ The generated `HPC_Agent_Slide_Deck.pptx` is a single slide:
 - edge loop line `<index> <edge_km>` → new `xmin` in cm (`edge_km * 1e5`)
 - `Prev Total Mass, New Total Mass : <prev> <new>` → conservation check (`MASS_CONSERVATION_RTOL = 1e-6`; residual is printed, e.g. `rel err 1.40e-07`). Also handles older variants where the labels appear around the numbers.
 
-It rewrites `restart`, `checkpointFileNumber`, `plotFileNumber`, `xmin`, `point_mass`, `iProcs`, `do_move`, `skip_num`, and scales interval time/step by `(xmin/old_xmin)*1.3`. Existing inline comments are preserved; `flash.par.bak` is written and `flash.par` is replaced atomically. It exits nonzero on failure.
+It rewrites `restart`, `checkpointFileNumber`, `plotFileNumber`, `xmin`, `point_mass`, `iProcs`, `do_move`, `skip_num`, and scales interval time/step by `(xmin/old_xmin)*1.3`. Each changed value is logged (`old -> new`) and the previous line is preserved as `# old: <original line>`; unchanged values are left alone. Existing inline comments are preserved. `flash.par.bak` is written and `flash.par` is replaced atomically. It exits nonzero on failure.
 
-The login-node `python3` is 3.6 and lacks `h5py`/`scipy`; the script is 3.6-compatible and launches the shock finder via `module load python/3.12-26.1.0` when needed. Flags: `--dry-run`, `--workdir`, `--param-file`, `--shock-finder`, `--shock-python`, `--shock-module`. The dashboard does **not** pass a path: `parfile_restart.py` auto-detects `shock_finder_v4.py` in the workdir (`--shock-finder` is a manual CLI override). Deployed at the same workdir; `preprocess.enabled = true`.
+Idempotency: before running the shock finder it compares the latest checkpoint file number with `flash.par`'s `checkpointFileNumber` and exits immediately if they match (`no new checkpoint since last preprocess`). This prevents `iProcs` from decrementing and checkpoint/plot intervals from rescaling when no simulation ran. `--force` bypasses the check and reapplies those changes; use it only when intentionally re-processing the same checkpoint.
+
+The login-node `python3` is 3.6 and lacks `h5py`/`scipy`; the script is 3.6-compatible and launches the shock finder via `module load python/3.12-26.1.0` when needed. Flags: `--dry-run`, `--force`, `--workdir`, `--param-file`, `--shock-finder`, `--shock-python`, `--shock-module`. The dashboard does **not** pass a path: `parfile_restart.py` auto-detects `shock_finder_v4.py` in the workdir (`--shock-finder` is a manual CLI override). Deployed at the same workdir; `preprocess.enabled = true`.
 
 ## API endpoints
 
@@ -100,6 +102,7 @@ When `[jobs]` has entries, each script runs in `<remote_workdir>/<script_stem>/`
 ## Recent success
 
 - Real `parfile_restart.py` run on Perlmutter (2026-10-25) completed returncode 0: shock finder parsed `skip_num=3 xmin=8.392478e+07 point_mass=2.565207e+33 iprocs=123`, wrote `flash.par.bak`, and changed 8 lines in `flash.par`.
+- Idempotency verified on Perlmutter: a plain `--dry-run` now exits with `flash.par checkpointFileNumber 154 == latest checkpoint 154` (no shock finder, no changes); `--dry-run --force` reports only the three expected updates (`checkpointFileIntervalTime`, `plotFileIntervalTime`, `iProcs`). Local fake-shock tests confirmed `# old:` lines and that a second run skips.
 
 ## Cluster targets
 

@@ -39,6 +39,7 @@ import shlex
 import shutil
 import subprocess
 import sys
+import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -86,6 +87,14 @@ def replace_value(line, new_value):
             updated += " "
         updated += comment
     return updated + newline
+
+
+def comment_old_line(line):
+    # type: (str) -> str
+    """Return a commented copy of a ``key = value`` line for change history."""
+    body = line.rstrip("\n")
+    indent = body[: len(body) - len(body.lstrip())]
+    return indent + "# old: " + body.lstrip() + "\n"
 
 
 def find_workdir(explicit):
@@ -302,15 +311,28 @@ def read_param_lines(path):
 
 def latest_file_number(directory, basenm, kind):
     # type: (Path, str, str) -> int
+    return latest_file_info(directory, basenm, kind)["number"]
+
+
+def latest_file_info(directory, basenm, kind):
+    # type: (Path, str, str) -> Dict[str, Any]
     pattern = "{}hdf5_{}_*".format(basenm, kind)
-    numbers = []  # type: List[int]
+    candidates = []  # type: List[Tuple[int, Path]]
     for path in directory.glob(pattern):
         match = re.search(r"_(\d+)$", path.name)
         if match:
-            numbers.append(int(match.group(1)))
-    if not numbers:
+            candidates.append((int(match.group(1)), path))
+    if not candidates:
         raise FileNotFoundError("No {} files found in {}.".format(pattern, directory))
-    return max(numbers)
+    number, path = max(candidates, key=lambda item: item[0])
+    stat = path.stat()
+    return {
+        "number": number,
+        "path": path,
+        "name": path.name,
+        "mtime": stat.st_mtime,
+        "size": stat.st_size,
+    }
 
 
 def format_number(value):
@@ -318,8 +340,8 @@ def format_number(value):
     return "{:.15g}".format(value)
 
 
-def rewrite_params(lines, params, shock, workdir):
-    # type: (List[str], Dict[str, str], Dict[str, Any], Path) -> List[str]
+def rewrite_params(lines, params, shock, workdir, prev_chk=None, prev_plt=None):
+    # type: (List[str], Dict[str, str], Dict[str, Any], Path, Optional[int], Optional[int]) -> Dict[str, Any]
     required = ["basenm", "output_directory", "iprocs", "xmin"]
     missing = [key for key in required if key not in params]
     if missing:
@@ -332,8 +354,10 @@ def rewrite_params(lines, params, shock, workdir):
     prev_iprocs = int(params["iprocs"])
     old_xmin = float(params["xmin"])
 
-    prev_chk = latest_file_number(outdir, basenm, "chk")
-    prev_plt = latest_file_number(outdir, basenm, "plt")
+    if prev_chk is None:
+        prev_chk = latest_file_number(outdir, basenm, "chk")
+    if prev_plt is None:
+        prev_plt = latest_file_number(outdir, basenm, "plt")
 
     skip_num = shock["skip_num"]
     if skip_num < 0:
@@ -379,6 +403,7 @@ def rewrite_params(lines, params, shock, workdir):
             new_values[key] = str(round(prev * interval_scale))
 
     updated = []  # type: List[str]
+    changes = []  # type: List[Dict[str, str]]
     for line in lines:
         if not line.strip() or line.lstrip().startswith("#"):
             updated.append(line)
@@ -388,11 +413,32 @@ def rewrite_params(lines, params, shock, workdir):
             updated.append(line)
             continue
         key = match.group(2).lower()
-        if key in new_values:
-            updated.append(replace_value(line, new_values[key]))
-        else:
+        if key not in new_values:
             updated.append(line)
-    return updated
+            continue
+        old_value = params.get(key, parse_value(match.group(4)))
+        new_value = new_values[key]
+        if old_value == new_value:
+            updated.append(line)
+            continue
+        updated.append(comment_old_line(line))
+        updated.append(replace_value(line, new_value))
+        changes.append(
+            {
+                "key": key,
+                "name": match.group(2),
+                "old": old_value,
+                "new": new_value,
+            }
+        )
+    return {
+        "lines": updated,
+        "changes": changes,
+        "new_values": new_values,
+        "prev_chk": prev_chk,
+        "prev_plt": prev_plt,
+        "interval_scale": interval_scale,
+    }
 
 
 def main():
@@ -416,6 +462,14 @@ def main():
     parser.add_argument(
         "--no-backup", action="store_true", help="Do not create flash.par.bak."
     )
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help=(
+            "Re-run even if the latest checkpoint was already processed. "
+            "This reapplies iProcs and interval scaling."
+        ),
+    )
     args = parser.parse_args()
 
     workdir = find_workdir(args.workdir)
@@ -434,6 +488,65 @@ def main():
             "Missing required input file(s) in {}: {}".format(
                 workdir, ", ".join(missing_files)
             )
+        )
+
+    params, lines = read_param_lines(param_path)
+    required_keys = ["basenm", "output_directory", "iprocs", "xmin"]
+    missing_keys = [key for key in required_keys if key not in params]
+    if missing_keys:
+        raise RuntimeError(
+            "flash.par is missing required key(s): " + ", ".join(missing_keys)
+        )
+
+    basenm = params["basenm"]
+    outdir = Path(params["output_directory"])
+    if not outdir.is_absolute():
+        outdir = workdir / outdir
+    latest_chk = latest_file_info(outdir, basenm, "chk")
+    latest_plt = latest_file_info(outdir, basenm, "plt")
+    current_chk = None
+    current_chk_raw = params.get("checkpointfilenumber")
+    if current_chk_raw is not None:
+        try:
+            current_chk = int(float(current_chk_raw))
+        except ValueError:
+            current_chk = None
+
+    print("parameter file: {}".format(param_path))
+    print(
+        "latest checkpoint: {} (#{}, mtime {})".format(
+            latest_chk["name"],
+            latest_chk["number"],
+            time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime(latest_chk["mtime"])),
+        )
+    )
+    print(
+        "latest plot: {} (#{}, mtime {})".format(
+            latest_plt["name"],
+            latest_plt["number"],
+            time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime(latest_plt["mtime"])),
+        )
+    )
+    print(
+        "flash.par checkpointFileNumber: {}".format(
+            current_chk if current_chk is not None else "not set"
+        )
+    )
+
+    skip = current_chk is not None and current_chk == latest_chk["number"]
+    if skip and not args.force:
+        print(
+            "no new checkpoint since last preprocess "
+            "(flash.par checkpointFileNumber {} == latest checkpoint {}).".format(
+                current_chk, latest_chk["number"]
+            )
+        )
+        print("flash.par unchanged; use --force to re-run the shock finder.")
+        return 0
+    if args.force and skip:
+        print(
+            "warning: forcing re-process of an already-processed checkpoint; "
+            "iProcs and interval scaling will be applied again."
         )
 
     shock_script = find_shock_finder(workdir, args.shock_finder)
@@ -465,23 +578,48 @@ def main():
             "(new total {:.6e})".format(shock["total_mass"])
         )
 
-    params, lines = read_param_lines(param_path)
-    updated_lines = rewrite_params(lines, params, shock, workdir)
+    result = rewrite_params(
+        lines,
+        params,
+        shock,
+        workdir,
+        prev_chk=latest_chk["number"],
+        prev_plt=latest_plt["number"],
+    )
+    updated_lines = result["lines"]
+    changes = result["changes"]
+    changed_lines = len(changes) * 2
 
-    changed = sum(1 for a, b in zip(lines, updated_lines) if a != b)
     print(
-        "skip_num={} xmin={} point_mass={:.6e} iprocs={}".format(
+        "shock result: skip_num={} xmin={} point_mass={:.6e} iprocs={}".format(
             shock["skip_num"],
             "{:.6e}".format(shock["xmin_cm"])
             if shock["xmin_cm"] is not None
             else "n/a",
             shock["point_mass"],
-            int(params["iprocs"]) - shock["skip_num"],
+            result["new_values"]["iprocs"],
         )
     )
+    if changes:
+        print("changes (old values kept as '# old:' lines):")
+        for change in changes:
+            print(
+                "  {}: {} -> {}".format(
+                    change["name"], change["old"], change["new"]
+                )
+            )
+    else:
+        print("no parameter values changed.")
 
     if args.dry_run:
-        print("dry run: {} line(s) would change; {} not modified.".format(changed, param_path))
+        print(
+            "dry run: {} parameter(s), {} line(s) would change; "
+            "{} not modified.".format(len(changes), changed_lines, param_path)
+        )
+        return 0
+
+    if not changes:
+        print("no updates needed; {} unchanged.".format(param_path))
         return 0
 
     if not args.no_backup:
@@ -492,7 +630,11 @@ def main():
     tmp_path = param_path.with_name(param_path.name + ".tmp")
     tmp_path.write_text("".join(updated_lines), encoding="utf-8")
     os.replace(tmp_path, param_path)
-    print("updated: {} ({} line(s) changed)".format(param_path, changed))
+    print(
+        "updated: {} ({} parameter(s), {} line(s) added/updated)".format(
+            param_path, len(changes), changed_lines
+        )
+    )
     return 0
 
 

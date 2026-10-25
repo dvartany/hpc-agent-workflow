@@ -84,4 +84,7 @@
 - Parser now reads `Prev Total Mass, New Total Mass`; conservation tolerance `1e-6` (observed `1.40e-07`), dry-run passes
 - Dashboard main window now prints "Pre-process complete." (or failure) when the preprocess process finishes
 - Removed the explicit `preprocess.shock_finder` field/config/wiring; `parfile_restart.py` auto-detects the script again
+- `parfile_restart.py` is now idempotent: skips when `flash.par checkpointFileNumber` equals the latest checkpoint, so `iProcs`/interval scaling are not reapplied without a new simulation; `--force` overrides
+- Changed values are logged (`old -> new`) and the prior line is kept as `# old: <line>`; dry-run reports parameter/line counts and latest checkpoint/plot mtimes
+- Local fake-shock tests covered skip, force dry-run, force write, and re-run; real Perlmutter `--dry-run` (skip) and `--dry-run --force` (3 expected changes) passed; deployed to Perlmutter
 - Dashboard restarted on http://127.0.0.1:8765 with Perlmutter config
