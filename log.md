@@ -87,4 +87,6 @@
 - `parfile_restart.py` is now idempotent: skips when `flash.par checkpointFileNumber` equals the latest checkpoint, so `iProcs`/interval scaling are not reapplied without a new simulation; `--force` overrides
 - Changed values are logged (`old -> new`) and the prior line is kept as `# old: <line>`; dry-run reports parameter/line counts and latest checkpoint/plot mtimes
 - Local fake-shock tests covered skip, force dry-run, force write, and re-run; real Perlmutter `--dry-run` (skip) and `--dry-run --force` (3 expected changes) passed; deployed to Perlmutter
+- `iProcs` now read from the checkpoint's `integer runtime parameters` (via `h5dump`, h5py fallback) and written as `checkpoint iProcs - skip_num`; no fallback to the possibly-decremented `flash.par` value
+- Verified on Perlmutter checkpoint 154: `iProcs 126 - skip_num 3 = 123`; local synthetic-HDF5 test also corrected `flash.par iProcs 120` to 123
 - Dashboard restarted on http://127.0.0.1:8765 with Perlmutter config

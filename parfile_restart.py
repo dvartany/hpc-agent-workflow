@@ -199,6 +199,78 @@ def build_shock_command(script, workdir, args):
     return ["bash", "-lc", shell_cmd]
 
 
+def checkpoint_iprocs(path, workdir, args):
+    # type: (Path, Path, argparse.Namespace) -> Optional[int]
+    """Read iProcs stored in a FLASH checkpoint's integer runtime parameters."""
+    h5dump = shutil.which("h5dump")
+    if h5dump:
+        try:
+            result = subprocess.run(
+                [h5dump, "-d", "integer runtime parameters", str(path)],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                universal_newlines=True,
+                timeout=300,
+            )
+        except Exception:
+            result = None
+        if result is not None and result.returncode == 0:
+            match = re.search(r'"iprocs\s*"\s*,\s*(-?\d+)', result.stdout)
+            if match:
+                return int(match.group(1))
+
+    code = (
+        "import sys\n"
+        "import h5py\n"
+        "with h5py.File(sys.argv[1], 'r') as handle:\n"
+        "    rows = handle['integer runtime parameters'][:]\n"
+        "for row in rows:\n"
+        "    name = row['name']\n"
+        "    if isinstance(name, bytes):\n"
+        "        name = name.decode('ascii', 'ignore')\n"
+        "    if name.strip().lower() == 'iprocs':\n"
+        "        print(int(row['value']))\n"
+        "        break\n"
+    )
+    explicit = args.shock_python or os.environ.get("SHOCK_PYTHON")
+    if explicit:
+        cmd = [explicit, "-c", code, str(path)]
+    elif can_import(sys.executable, ["h5py"], workdir):
+        cmd = [sys.executable, "-c", code, str(path)]
+    else:
+        module = (
+            args.shock_module
+            or os.environ.get("SHOCK_PYTHON_MODULE")
+            or DEFAULT_SHOCK_MODULE
+        )
+        shell_cmd = (
+            "cd {workdir} && module load {module} && "
+            "exec python3 -c {code} {path}".format(
+                workdir=shlex.quote(str(workdir)),
+                module=module,
+                code=shlex.quote(code),
+                path=shlex.quote(str(path)),
+            )
+        )
+        cmd = ["bash", "-lc", shell_cmd]
+
+    try:
+        result = subprocess.run(
+            cmd,
+            cwd=str(workdir),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            universal_newlines=True,
+            timeout=300,
+        )
+    except Exception:
+        return None
+    if result.returncode != 0:
+        return None
+    match = re.search(r"(-?\d+)", result.stdout)
+    return int(match.group(1)) if match else None
+
+
 def run_shock_finder(script, workdir, args):
     # type: (Path, Path, argparse.Namespace) -> str
     cmd = build_shock_command(script, workdir, args)
@@ -340,8 +412,10 @@ def format_number(value):
     return "{:.15g}".format(value)
 
 
-def rewrite_params(lines, params, shock, workdir, prev_chk=None, prev_plt=None):
-    # type: (List[str], Dict[str, str], Dict[str, Any], Path, Optional[int], Optional[int]) -> Dict[str, Any]
+def rewrite_params(
+    lines, params, shock, workdir, prev_chk=None, prev_plt=None, chk_iprocs=None
+):
+    # type: (List[str], Dict[str, str], Dict[str, Any], Path, Optional[int], Optional[int], Optional[int]) -> Dict[str, Any]
     required = ["basenm", "output_directory", "iprocs", "xmin"]
     missing = [key for key in required if key not in params]
     if missing:
@@ -351,7 +425,12 @@ def rewrite_params(lines, params, shock, workdir, prev_chk=None, prev_plt=None):
     outdir = Path(params["output_directory"])
     if not outdir.is_absolute():
         outdir = workdir / outdir
-    prev_iprocs = int(params["iprocs"])
+    if chk_iprocs is None:
+        raise RuntimeError(
+            "Checkpoint iProcs is required to compute the new iProcs; "
+            "refusing to use flash.par."
+        )
+    chk_iprocs = int(chk_iprocs)
     old_xmin = float(params["xmin"])
 
     if prev_chk is None:
@@ -362,9 +441,11 @@ def rewrite_params(lines, params, shock, workdir, prev_chk=None, prev_plt=None):
     skip_num = shock["skip_num"]
     if skip_num < 0:
         raise RuntimeError("Invalid skip_num: {}".format(skip_num))
-    if skip_num > prev_iprocs:
+    if skip_num > chk_iprocs:
         raise RuntimeError(
-            "skip_num ({}) exceeds previous iProcs ({}).".format(skip_num, prev_iprocs)
+            "skip_num ({}) exceeds checkpoint iProcs ({}).".format(
+                skip_num, chk_iprocs
+            )
         )
 
     xmin = shock["xmin_cm"]
@@ -385,7 +466,7 @@ def rewrite_params(lines, params, shock, workdir, prev_chk=None, prev_plt=None):
         "checkpointfilenumber": str(prev_chk),
         "plotfilenumber": str(prev_plt + 1),
         "point_mass": format_number(shock["point_mass"]),
-        "iprocs": str(prev_iprocs - skip_num),
+        "iprocs": str(chk_iprocs - skip_num),
         "do_move": ".true." if skip_num > 0 else ".false.",
         "skip_num": str(skip_num),
     }  # type: Dict[str, str]
@@ -437,6 +518,7 @@ def rewrite_params(lines, params, shock, workdir, prev_chk=None, prev_plt=None):
         "new_values": new_values,
         "prev_chk": prev_chk,
         "prev_plt": prev_plt,
+        "chk_iprocs": chk_iprocs,
         "interval_scale": interval_scale,
     }
 
@@ -549,6 +631,15 @@ def main():
             "iProcs and interval scaling will be applied again."
         )
 
+    chk_iprocs = checkpoint_iprocs(latest_chk["path"], workdir, args)
+    if chk_iprocs is None:
+        raise RuntimeError(
+            "Could not read iProcs from checkpoint {}. Refusing to update "
+            "flash.par; set --shock-python to a Python with h5py or ensure "
+            "h5dump is available.".format(latest_chk["name"])
+        )
+    print("checkpoint iProcs: {}".format(chk_iprocs))
+
     shock_script = find_shock_finder(workdir, args.shock_finder)
     print("shock finder: {}".format(shock_script))
     shock_output = run_shock_finder(shock_script, workdir, args)
@@ -585,10 +676,17 @@ def main():
         workdir,
         prev_chk=latest_chk["number"],
         prev_plt=latest_plt["number"],
+        chk_iprocs=chk_iprocs,
     )
     updated_lines = result["lines"]
     changes = result["changes"]
     changed_lines = len(changes) * 2
+
+    print(
+        "iProcs: checkpoint {} - skip_num {} = {}".format(
+            chk_iprocs, shock["skip_num"], chk_iprocs - shock["skip_num"]
+        )
+    )
 
     print(
         "shock result: skip_num={} xmin={} point_mass={:.6e} iprocs={}".format(
