@@ -41,6 +41,9 @@ const commandOutput = document.querySelector("#commandOutput");
 const buttons = Array.from(document.querySelectorAll("button"));
 
 let latestState = null;
+let preprocessWasRunning = false;
+let preprocessResultMessage = "";
+let preprocessJustCompleted = false;
 
 const fields = [
   "restart",
@@ -187,8 +190,30 @@ function text(id, value) {
   document.querySelector(`#${id}`).textContent = value || "";
 }
 
+function withPreprocessMessage(recent) {
+  return [preprocessResultMessage, recent].filter(Boolean).join("\n");
+}
+
 function renderUI(state) {
   latestState = state;
+  const preprocess = state.preprocessProcess || {};
+  if (preprocess.running) {
+    preprocessWasRunning = true;
+    preprocessResultMessage = "";
+    preprocessJustCompleted = false;
+  } else if (preprocessWasRunning) {
+    preprocessWasRunning = false;
+    const rc = preprocess.returncode;
+    preprocessResultMessage =
+      rc === 0
+        ? "Pre-process complete."
+        : rc == null
+          ? "Pre-process finished."
+          : `Pre-process failed (exit ${rc}).`;
+    preprocessJustCompleted = true;
+  } else {
+    preprocessJustCompleted = false;
+  }
   const cluster = state.config.cluster || {};
   text("clusterTarget", cluster.user && cluster.host ? `${cluster.user}@${cluster.host}` : cluster.host || "Not configured");
   text("jobId", state.jobId || "None");
@@ -229,16 +254,19 @@ function renderUI(state) {
     monitor.classList.add("state-stopped");
   }
 
-  if (state.analysisProcess && state.analysisProcess.running) {
+  const analysisRunning = Boolean(state.analysisProcess && state.analysisProcess.running);
+  if (analysisRunning) {
     const runLog = state.runLog || [];
     const recent = runLog.slice(-10).join("\n");
-    if (recent) commandOutput.textContent = recent;
+    const output = withPreprocessMessage(recent);
+    if (output) commandOutput.textContent = output;
   }
 
   if (state.process.running) {
     const runLog = state.runLog || [];
     const recent = runLog.slice(-10).join("\n");
-    if (recent) commandOutput.textContent = recent;
+    const output = withPreprocessMessage(recent);
+    if (output) commandOutput.textContent = output;
   }
 
   document.querySelectorAll(".phase").forEach((el) => {
@@ -268,6 +296,9 @@ function renderUI(state) {
   }
   if (state.currentPhase === "sync") {
     document.querySelector("#syncBtn")?.setAttribute("data-active", "");
+  }
+  if (preprocessJustCompleted && !state.process.running && !analysisRunning) {
+    commandOutput.textContent = preprocessResultMessage;
   }
 }
 
@@ -300,6 +331,8 @@ async function refreshUI() {
 }
 
 async function saveConfig() {
+  preprocessResultMessage = "";
+  preprocessJustCompleted = false;
   const payload = await api("/api/config", {
     method: "POST",
     body: JSON.stringify(readForm()),
@@ -309,6 +342,8 @@ async function saveConfig() {
 }
 
 async function action(actionName) {
+  preprocessResultMessage = "";
+  preprocessJustCompleted = false;
   const manualJobId = document.querySelector("#manualJobId").value.trim();
   buttons.forEach((button) => (button.disabled = true));
   if (actionName === "sync") {

@@ -82,5 +82,6 @@
 - Real Perlmutter preprocess succeeded: shock finder parsed, `flash.par.bak` written, 8 lines changed in `flash.par`
 - Checked updated NERSC `shock_finder_v4.py` conservation output; fixed its undefined `maindir` (backup: `shock_finder_v4.py.bak.conservation`)
 - Parser now reads `Prev Total Mass, New Total Mass`; conservation tolerance `1e-6` (observed `1.40e-07`), dry-run passes
+- Dashboard main window now prints "Pre-process complete." (or failure) when the preprocess process finishes
 - Removed the explicit `preprocess.shock_finder` field/config/wiring; `parfile_restart.py` auto-detects the script again
 - Dashboard restarted on http://127.0.0.1:8765 with Perlmutter config

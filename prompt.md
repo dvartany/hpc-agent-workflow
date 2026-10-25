@@ -64,6 +64,7 @@ The generated `HPC_Agent_Slide_Deck.pptx` is a single slide:
 
 - On load, the **HPC preset** dropdown starts on NERSC (the `<option>` is `selected`). If `cluster.host` is set, `writeForm()` maps it (perlmutter→nersc, frontera→tacc, polaris→polaris, otherwise Custom); if the config is empty, it fills the NERSC preset instead of leaving Custom.
 - Actions POST the current form to `/api/config` first. `write_config()` now refuses to overwrite an existing host with an entirely empty `cluster` block (500 + "Refresh the dashboard…"), so a stale tab can no longer wipe the config. Reload the page after the server restarts.
+- When the **Pre-process** process transitions from running to stopped, the main command output replaces "pre-process started." with **"Pre-process complete."** (or `Pre-process failed (exit N).`). The 10s poll detects the transition.
 - Polling is every 10s, so short actions can finish between polls. The Sync action optimistically lights the Sync phase/button immediately; the standalone `sync` CLI also writes `.hpc_agent_phase=sync` for the duration.
 
 ## Pre-processing script
