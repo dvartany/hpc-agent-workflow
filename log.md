@@ -80,4 +80,5 @@
 - Empty config now fills the NERSC preset in the form instead of showing Custom
 - `write_config()` guard rejects an entirely empty cluster block when a host already exists (stops stale-tab wipes)
 - Real Perlmutter preprocess succeeded: shock finder parsed, `flash.par.bak` written, 8 lines changed in `flash.par`
+- Removed the explicit `preprocess.shock_finder` field/config/wiring; `parfile_restart.py` auto-detects the script again
 - Dashboard restarted on http://127.0.0.1:8765 with Perlmutter config

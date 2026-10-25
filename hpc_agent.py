@@ -376,9 +376,6 @@ def _run_phase(config: dict[str, Any], section: str, label: str) -> None:
             else:
                 full_dir = workdir
             remote_cmd = f"cd {shlex.quote(full_dir)} && python3 {shlex.quote(script_name)}"
-            shock_finder = cfg.get("shock_finder")
-            if shock_finder:
-                remote_cmd += f" --shock-finder {shlex.quote(shock_finder)}"
         else:
             remote_cmd = cfg.get("command")
             if remote_cmd:

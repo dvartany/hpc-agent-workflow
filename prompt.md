@@ -75,7 +75,7 @@ The generated `HPC_Agent_Slide_Deck.pptx` is a single slide:
 
 It rewrites `restart`, `checkpointFileNumber`, `plotFileNumber`, `xmin`, `point_mass`, `iProcs`, `do_move`, `skip_num`, and scales interval time/step by `(xmin/old_xmin)*1.3`. Existing inline comments are preserved; `flash.par.bak` is written and `flash.par` is replaced atomically. It exits nonzero on failure.
 
-The login-node `python3` is 3.6 and lacks `h5py`/`scipy`; the script is 3.6-compatible and launches the shock finder via `module load python/3.12-26.1.0` when needed. Flags: `--dry-run`, `--workdir`, `--param-file`, `--shock-finder`, `--shock-python`, `--shock-module`. The dashboard passes `preprocess.shock_finder` as `--shock-finder`; it is set in `config.toml` to `/pscratch/sd/v/vartan/2023/F2F/9-3D-new/shock_finder_v4.py`. Deployed at the same workdir; `preprocess.enabled = true`.
+The login-node `python3` is 3.6 and lacks `h5py`/`scipy`; the script is 3.6-compatible and launches the shock finder via `module load python/3.12-26.1.0` when needed. Flags: `--dry-run`, `--workdir`, `--param-file`, `--shock-finder`, `--shock-python`, `--shock-module`. The dashboard does **not** pass a path: `parfile_restart.py` auto-detects `shock_finder_v4.py` in the workdir (`--shock-finder` is a manual CLI override). Deployed at the same workdir; `preprocess.enabled = true`.
 
 ## API endpoints
 
@@ -92,7 +92,7 @@ When `[jobs]` has entries, each script runs in `<remote_workdir>/<script_stem>/`
 - **SSH dependency** — dashboard talks to Frontera or Perlmutter; sleep/reboot kills subprocesses
 - **2FA** — NERSC (Perlmutter) may require an SSH key + OTP; `BatchMode=yes` in `ssh_base()` fails without a working key
 - **Phase file on SIGKILL** — `.hpc_agent_phase` not cleaned up on hard kill
-- **Stale config writes** — mitigated by the empty-cluster guard; if `config.toml` is ever wiped, restore with `git checkout HEAD -- config.toml` and re-add `shock_finder`
+- **Stale config writes** — mitigated by the empty-cluster guard; if `config.toml` is ever wiped, restore with `git checkout HEAD -- config.toml`
 - **config.toml custom parser** — hand-rolled TOML parser does not support quoted strings with `#` or inline tables; use simple key = value only
 
 ## Recent success

@@ -57,7 +57,6 @@ const fields = [
   "preprocess.command",
   "preprocess.slurm_script",
   "preprocess.python_script",
-  "preprocess.shock_finder",
   "sync.enabled",
   "sync.remote_results_path",
   "sync.local_results_path",

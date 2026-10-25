@@ -62,4 +62,4 @@ Runs on the login node as the first pipeline phase. From the remote workdir it:
 2. Updates `flash.par`: `restart`, latest checkpoint/plot numbers, `xmin`, `point_mass`, `iProcs`, `skip_num`, `do_move`, and interval scaling.
 3. Backs up `flash.par.bak` and writes atomically. Exits nonzero on failure so the pipeline stops.
 
-Useful flags: `--dry-run` (no write), `--shock-module`, `--shock-python`, `--shock-finder`. Set `preprocess.shock_finder` in `config.toml` (or the dashboard's **Shock finder** field) to pin an explicit script path; currently `/pscratch/sd/v/vartan/2023/F2F/9-3D-new/shock_finder_v4.py`. `parfile_restart.py` is deployed to the Perlmutter workdir and enabled in `config.toml`.
+Useful flags: `--dry-run` (no write), `--shock-module`, `--shock-python`, `--shock-finder`. By default it auto-detects `shock_finder_v4.py` in the workdir; pass `--shock-finder` only to override. `parfile_restart.py` is deployed to the Perlmutter workdir and enabled in `config.toml`.
