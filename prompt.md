@@ -74,7 +74,7 @@ The generated `HPC_Agent_Slide_Deck.pptx` is a single slide:
 
 It rewrites `restart`, `checkpointFileNumber`, `plotFileNumber`, `xmin`, `point_mass`, `iProcs`, `do_move`, `skip_num`, and scales interval time/step by `(xmin/old_xmin)*1.3`. Existing inline comments are preserved; `flash.par.bak` is written and `flash.par` is replaced atomically. It exits nonzero on failure.
 
-The login-node `python3` is 3.6 and lacks `h5py`/`scipy`; the script is 3.6-compatible and launches the shock finder via `module load python/3.12-26.1.0` when needed. Flags: `--dry-run`, `--workdir`, `--param-file`, `--shock-finder`, `--shock-python`, `--shock-module`. Deployed at `/pscratch/sd/v/vartan/2023/F2F/9-3D-new/parfile_restart.py`; `preprocess.enabled = true` in `config.toml`.
+The login-node `python3` is 3.6 and lacks `h5py`/`scipy`; the script is 3.6-compatible and launches the shock finder via `module load python/3.12-26.1.0` when needed. Flags: `--dry-run`, `--workdir`, `--param-file`, `--shock-finder`, `--shock-python`, `--shock-module`. The dashboard passes `preprocess.shock_finder` as `--shock-finder`; it is set in `config.toml` to `/pscratch/sd/v/vartan/2023/F2F/9-3D-new/shock_finder_v4.py`. Deployed at the same workdir; `preprocess.enabled = true`.
 
 ## API endpoints
 

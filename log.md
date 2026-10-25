@@ -74,3 +74,7 @@
 - Rewrote `parfile_restart.py` for the dashboard: no hardcoded paths, cwd/workdir detection, parses Perlmutter shock-finder output, pure-stdlib (works on login-node Python 3.6), module fallback (`python/3.12-26.1.0`) for h5py/scipy, backup + atomic write, nonzero exit on failure
 - Integration-tested on Perlmutter with a fake shock finder (Python 3.6 + module fallback + dry-run passed)
 - Deployed to `/pscratch/sd/v/vartan/2023/F2F/9-3D-new/parfile_restart.py`; `preprocess.enabled = true`
+- Added explicit `preprocess.shock_finder` path (UI field + config + agent `--shock-finder` wiring)
+- NERSC preset is now the initially selected dropdown option (no Custom flash on load)
+- Restored `config.toml` after a stale dashboard form wiped it to empty defaults
+- Empty config now fills the NERSC preset in the form instead of showing Custom

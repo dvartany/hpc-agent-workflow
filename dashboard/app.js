@@ -57,6 +57,7 @@ const fields = [
   "preprocess.command",
   "preprocess.slurm_script",
   "preprocess.python_script",
+  "preprocess.shock_finder",
   "sync.enabled",
   "sync.remote_results_path",
   "sync.local_results_path",
@@ -111,7 +112,17 @@ function writeForm(config) {
   }
   renderJobScripts(config.jobs);
   const presetSelect = document.querySelector("#hpcPreset");
-  if (presetSelect) presetSelect.value = presetForHost(config.cluster?.host);
+  const host = config.cluster?.host;
+  if (presetSelect && host) {
+    presetSelect.value = presetForHost(host);
+  } else if (
+    presetSelect &&
+    presetSelect.value &&
+    !config.cluster?.user &&
+    !config.cluster?.remote_workdir
+  ) {
+    applyHpcPreset();
+  }
   toggleModeFields();
   togglePreprocessModeFields();
 }

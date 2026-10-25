@@ -29,6 +29,8 @@ mode = "local"
 command = "python3 analyze.py ./results/run_001/"
 slurm_script = "analysis_job.sh"
 python_script = "parfile_restart.py"
+# Optional: explicit shock_finder_v4.py path (otherwise auto-detected).
+# shock_finder = "/path/to/shock_finder_v4.py"
 job_id_file = ".hpc_agent_analysis_job_id"
 
 [jobs]

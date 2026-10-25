@@ -111,6 +111,7 @@
                 <label class="wide" data-show-for-pre="local">Command <input name="preprocess.command" autocomplete="off"></label>
                 <label data-show-for-pre="submit" hidden>Slurm script <input name="preprocess.slurm_script" autocomplete="off"></label>
                 <label class="wide" data-show-for-pre="python">Python script <input name="preprocess.python_script" autocomplete="off"></label>
+                <label class="wide" data-show-for-pre="python">Shock finder <input name="preprocess.shock_finder" autocomplete="off"></label>
               </fieldset>
 
               <fieldset>
@@ -160,7 +161,7 @@
             <label>HPC preset
               <select id="hpcPreset">
                 <option value="">Custom</option>
-                <option value="nersc">NERSC (Perlmutter)</option>
+                <option value="nersc" selected>NERSC (Perlmutter)</option>
                 <option value="polaris">Polaris (ALCF)</option>
                 <option value="tacc">TACC (Frontera)</option>
               </select>
