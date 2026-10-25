@@ -44,3 +44,11 @@ The backend is host-agnostic (plain `ssh` + Slurm), so both clusters work with t
 | TACC (Frontera) | `frontera.tacc.utexas.edu` | `tg848932` | `/scratch2/05594/tg848932/2023/F2F/s17_new_mpi_decay` |
 
 The active `config.toml` cluster is currently Perlmutter.
+
+## Result save path
+
+`sync.local_results_path` supports `{hpc}` and `{project}` placeholders. The default is
+`results/{hpc}/{project}`, which expands to e.g. `results/perlmutter/9-3D-new` (or
+`results/frontera/s17_new_mpi_decay`). `{hpc}` is derived from the host, `{project}` from the
+basename of `cluster.remote_workdir`. With multiple job scripts, each script adds its stem as a
+subdirectory (`results/perlmutter/9-3D-new/<script_stem>/`).

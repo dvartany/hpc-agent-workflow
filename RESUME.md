@@ -19,6 +19,12 @@ Start Monitor, Stop, Submit, Queue, Pre-process, Analyze, Stop Analysis, Sync
 - Analysis (col 2): enabled toggle, mode select, command/slurm_script/python_script
 - Results (col 2, below Analysis): enabled toggle, remote results, local results
 
+## Local save path
+
+`sync.local_results_path` supports `{hpc}` (derived from cluster host) and `{project}`
+(remote_workdir basename). Active value: `results/{hpc}/{project}` → e.g.
+`results/perlmutter/9-3D-new`. Per-script runs append the script stem.
+
 ## What "Start Monitor" does
 1. run_preprocess(config) — runs pre-processing step
 2. submit(config) — submits main job via sbatch

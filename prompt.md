@@ -87,6 +87,14 @@ The backend is host-agnostic (`ssh` + `sbatch`/`squeue`/`scancel`), so switching
 
 Preset defaults live in `dashboard/app.js` (`HPC_PRESETS`). The active `config.toml` cluster is currently Perlmutter (`vartan@perlmutter-p1.nersc.gov`).
 
+## Local results save path
+
+`sync.local_results_path` is a template supporting `{hpc}` (derived from the host: perlmutter /
+frontera / polaris) and `{project}` (basename of `cluster.remote_workdir`). Active value:
+`results/{hpc}/{project}` → `results/perlmutter/9-3D-new` for the current config. Multi-script
+runs append the script stem as a subdir via `_with_subdir()`; `local_results_path()` in
+`hpc_agent.py` performs the expansion.
+
 ## Session closeout
 
 When concluding, update README.md, log.md, prompt.md, then commit and push. Use `git -c http.postBuffer=524288000 push` if HTTP 400 occurs (large PPTX/PNG in history). Remote is `https://github.com/dvartany/hpc-agent-workflow.git`.

@@ -12,7 +12,7 @@ job_id_file = ".hpc_agent_job_id"
 [sync]
 enabled = true
 remote_results_path = "opencode_automation/entr_plotter"
-local_results_path = "results/run_001"
+local_results_path = "results/{hpc}/{project}"
 
 [analysis]
 enabled = true

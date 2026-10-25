@@ -4,3 +4,5 @@ __pycache__/
 .hpc_agent_*
 dashboard-run.log
 hpc-agent-status.log
+*.swp
+results/

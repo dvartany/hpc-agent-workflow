@@ -17,7 +17,8 @@ job_id_file = ".hpc_agent_job_id"
 enabled = true
 # Relative to remote_workdir (or absolute path starting with /)
 remote_results_path = "results/"
-local_results_path = "./results/run_001/"
+# {hpc} = cluster name (perlmutter/frontera/polaris), {project} = remote_workdir basename
+local_results_path = "./results/{hpc}/{project}/"
 
 [analysis]
 enabled = true

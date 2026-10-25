@@ -127,6 +127,39 @@ def remote_cd(config: dict[str, Any], command: str) -> str:
     return f"cd {shlex.quote(config['cluster']['remote_workdir'])} && {command}"
 
 
+HPC_ALIASES = {
+    "perlmutter": "perlmutter",
+    "nersc": "perlmutter",
+    "frontera": "frontera",
+    "tacc": "frontera",
+    "polaris": "polaris",
+    "alcf": "polaris",
+}
+
+
+def hpc_name(config: dict[str, Any]) -> str:
+    host = config.get("cluster", {}).get("host", "").lower()
+    for needle, name in HPC_ALIASES.items():
+        if needle in host:
+            return name
+    label = host.split(".")[0]
+    return re.sub(r"-p\d+$", "", label) or "hpc"
+
+
+def project_name(config: dict[str, Any]) -> str:
+    workdir = str(config.get("cluster", {}).get("remote_workdir", "")).rstrip("/")
+    return Path(workdir).name or "project"
+
+
+def local_results_path(config: dict[str, Any]) -> Path:
+    template = config.get("sync", {}).get("local_results_path") or "results/{hpc}/{project}"
+    return Path(
+        template
+        .replace("{hpc}", hpc_name(config))
+        .replace("{project}", project_name(config))
+    )
+
+
 def script_path(config: dict[str, Any], name: str) -> str:
     base = config.get("cluster", {}).get("remote_script_path", "")
     return f"{base}/{name}".lstrip("/") if base else name
@@ -177,9 +210,8 @@ def _with_subdir(config: dict[str, Any], subdir: str) -> dict[str, Any]:
     c = copy.deepcopy(config)
     base = c.get("cluster", {}).get("remote_workdir", "")
     c["cluster"]["remote_workdir"] = str(Path(base) / subdir)
-    sync = c.get("sync", {})
-    if sync.get("local_results_path"):
-        sync["local_results_path"] = str(Path(sync["local_results_path"]) / subdir)
+    sync = c.setdefault("sync", {})
+    sync["local_results_path"] = str(local_results_path(config) / subdir)
     return c
 
 
@@ -308,7 +340,7 @@ def sync_results(config: dict[str, Any]) -> None:
     if sync.get("enabled") is False:
         log(config, "Results sync disabled.")
         return
-    local_path = Path(sync["local_results_path"])
+    local_path = local_results_path(config)
     local_path.mkdir(parents=True, exist_ok=True)
     remote_path = sync["remote_results_path"]
     workdir = config.get("cluster", {}).get("remote_workdir", "")

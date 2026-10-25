@@ -66,3 +66,5 @@
 - Switched active `config.toml` cluster to `perlmutter-p1.nersc.gov` / `vartan`
 - Documented both cluster presets in README, prompt.md, RESUME.md
 - Confirmed backend is host-agnostic (plain `ssh` + Slurm), so no code changes needed beyond preset/config
+- Added `{hpc}`/`{project}` placeholders to `sync.local_results_path`; expanded by `local_results_path()` in `hpc_agent.py`
+- Active save path now `results/{hpc}/{project}` → `results/perlmutter/9-3D-new`
