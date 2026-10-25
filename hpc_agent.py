@@ -559,11 +559,15 @@ def main() -> int:
                 log(config, "No job scripts configured.")
                 return 1
             use_subdirs = bool(config.get("jobs", {}))
-            for script in scripts:
-                subdir = _script_subdir(script) if use_subdirs else ""
-                sc = _with_subdir(config, subdir) if use_subdirs else config
-                log(config, f"Syncing results for {script}" + (f" (in {subdir}/)" if subdir else "") + ".")
-                sync_results(sc)
+            set_phase("sync")
+            try:
+                for script in scripts:
+                    subdir = _script_subdir(script) if use_subdirs else ""
+                    sc = _with_subdir(config, subdir) if use_subdirs else config
+                    log(config, f"Syncing results for {script}" + (f" (in {subdir}/)" if subdir else "") + ".")
+                    sync_results(sc)
+            finally:
+                clear_phase()
         elif args.command == "analyze":
             scripts = get_job_scripts(config)
             if not scripts:

@@ -28,6 +28,14 @@ function applyHpcPreset() {
   form.elements["cluster.remote_workdir"].value = data.remote_workdir || "";
 }
 
+function presetForHost(host) {
+  const value = (host || "").toLowerCase();
+  if (value.includes("perlmutter") || value.includes("nersc")) return "nersc";
+  if (value.includes("frontera") || value.includes("tacc")) return "tacc";
+  if (value.includes("polaris") || value.includes("alcf")) return "polaris";
+  return "";
+}
+
 const form = document.querySelector("#configForm");
 const commandOutput = document.querySelector("#commandOutput");
 const buttons = Array.from(document.querySelectorAll("button"));
@@ -102,6 +110,8 @@ function writeForm(config) {
     }
   }
   renderJobScripts(config.jobs);
+  const presetSelect = document.querySelector("#hpcPreset");
+  if (presetSelect) presetSelect.value = presetForHost(config.cluster?.host);
   toggleModeFields();
   togglePreprocessModeFields();
 }
@@ -248,6 +258,9 @@ function renderUI(state) {
   if (state.analysisProcess && state.analysisProcess.running) {
     document.querySelector("#analyzeBtn")?.setAttribute("data-active", "");
   }
+  if (state.currentPhase === "sync") {
+    document.querySelector("#syncBtn")?.setAttribute("data-active", "");
+  }
 }
 
 function renderState(state) {
@@ -290,6 +303,12 @@ async function saveConfig() {
 async function action(actionName) {
   const manualJobId = document.querySelector("#manualJobId").value.trim();
   buttons.forEach((button) => (button.disabled = true));
+  if (actionName === "sync") {
+    const phases = document.querySelectorAll(".phase");
+    phases.forEach((el) => el.removeAttribute("data-active"));
+    phases[3]?.setAttribute("data-active", "");
+    document.querySelector("#syncBtn")?.setAttribute("data-active", "");
+  }
   try {
     await api("/api/config", { method: "POST", body: JSON.stringify(readForm()) });
     commandOutput.textContent = `Running ${actionName}...`;

@@ -68,3 +68,6 @@
 - Confirmed backend is host-agnostic (plain `ssh` + Slurm), so no code changes needed beyond preset/config
 - Added `{hpc}`/`{project}` placeholders to `sync.local_results_path`; expanded by `local_results_path()` in `hpc_agent.py`
 - Active save path now `results/{hpc}/{project}` → `results/perlmutter/9-3D-new`
+- HPC preset dropdown now auto-selects from cluster host on load (Perlmutter → NERSC preset)
+- Standalone Sync now sets `.hpc_agent_phase=sync`; UI lights the Sync phase and button immediately (optimistic) since sync can finish inside the 10s poll
+- Verified real sync: `results/perlmutter/9-3D-new/entr_plotter` populated

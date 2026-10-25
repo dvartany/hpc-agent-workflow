@@ -59,6 +59,11 @@ The generated `HPC_Agent_Slide_Deck.pptx` is a single slide:
 - **Bottom:** GitHub URL
 - Closing line: "Stop babysitting individual batch jobs — automate the pipeline and focus on interpreting results."
 
+## UI behaviors
+
+- On load, the **HPC preset** dropdown auto-selects based on `cluster.host` (`presetForHost()` in `app.js`): perlmutter→nersc, frontera→tacc, polaris→polaris, otherwise Custom.
+- Polling is every 10s, so short actions can finish between polls. The Sync action optimistically lights the Sync phase/button immediately; the standalone `sync` CLI also writes `.hpc_agent_phase=sync` for the duration.
+
 ## API endpoints
 
 - **GET `/api/state`** — full state: config, jobId, latestStatus, queue, statusLog (120 lines), runLog (60 lines), process states, currentPhase
