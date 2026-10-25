@@ -397,13 +397,6 @@ select:focus {
   text-transform: uppercase;
 }
 
-.logs-compact .section-title span {
-  color: var(--muted);
-  font-size: 0.65rem;
-  overflow-wrap: anywhere;
-  text-align: right;
-}
-
 .logs-compact pre {
   min-height: 79px;
   max-height: 175px;

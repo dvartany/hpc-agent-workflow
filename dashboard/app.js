@@ -185,8 +185,6 @@ function renderUI(state) {
   text("latestStatus", state.latestStatus || "No status yet");
   text("statusLog", state.statusLog.length ? state.statusLog.join("\n") : "No status log yet.");
   text("runLog", state.runLog.length ? state.runLog.join("\n") : "No dashboard run log yet.");
-  text("statusLogPath", state.paths.statusLog);
-  text("runLogPath", state.paths.runLog);
 
   const queue = state.queue || {};
   const pending = (queue.PENDING || 0) + (queue.CONFIGURING || 0) + (queue.REQUEUE || 0) + (queue.SUSPENDED || 0);
