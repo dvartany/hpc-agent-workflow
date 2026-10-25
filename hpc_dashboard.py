@@ -131,10 +131,15 @@ def config_snapshot() -> dict[str, Any]:
     config.setdefault("job", {}).setdefault("script", "job.sh")
     config["job"].setdefault("job_id_file", ".hpc_agent_job_id")
     config.setdefault("analysis", {})
+    config.setdefault("preprocess", {})
+    config.setdefault("sync", {})
     config["analysis"].setdefault("mode", "local")
+    config["analysis"].setdefault("enabled", True)
     config["analysis"].setdefault("slurm_script", "analysis_job.sh")
     config["analysis"].setdefault("python_script", "parfile_restart.py")
     config["analysis"].setdefault("job_id_file", ".hpc_agent_analysis_job_id")
+    config["preprocess"].setdefault("enabled", True)
+    config["sync"].setdefault("enabled", True)
     return {
         "cluster": config.get("cluster", {}),
         "job": config.get("job", {}),

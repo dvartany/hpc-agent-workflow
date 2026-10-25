@@ -6,7 +6,8 @@ const HPC_PRESETS = {
   },
   nersc: {
     host: "perlmutter-p1.nersc.gov",
-    remote_workdir: "/global/homes/u/",
+    user: "vartan",
+    remote_workdir: "/pscratch/sd/v/vartan/2023/F2F/9-3D-new",
   },
   polaris: {
     host: "polaris.alcf.anl.gov",
@@ -229,7 +230,8 @@ function renderUI(state) {
   if (state.currentPhase) {
     if (state.currentPhase === "preprocess") phases[0].setAttribute("data-active", "");
     else if (state.currentPhase === "submit" || state.currentPhase === "monitor") phases[1].setAttribute("data-active", "");
-    else if (state.currentPhase === "analysis" || state.currentPhase === "sync") phases[2].setAttribute("data-active", "");
+    else if (state.currentPhase === "analysis") phases[2].setAttribute("data-active", "");
+    else if (state.currentPhase === "sync") phases[3].setAttribute("data-active", "");
   } else {
     if (state.preprocessProcess && state.preprocessProcess.running) phases[0].setAttribute("data-active", "");
     if (state.process.running) phases[1].setAttribute("data-active", "");

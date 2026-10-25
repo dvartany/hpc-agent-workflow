@@ -305,6 +305,9 @@ def poll(config: dict[str, Any], job_ids_str: str, label: str = "Job") -> str:
 
 def sync_results(config: dict[str, Any]) -> None:
     sync = config.get("sync", {})
+    if sync.get("enabled") is False:
+        log(config, "Results sync disabled.")
+        return
     local_path = Path(sync["local_results_path"])
     local_path.mkdir(parents=True, exist_ok=True)
     remote_path = sync["remote_results_path"]
@@ -394,6 +397,9 @@ def _run_phase(config: dict[str, Any], section: str, label: str) -> None:
 
 def run_preprocess(config: dict[str, Any]) -> None:
     cfg = config.get("preprocess", {})
+    if cfg.get("enabled") is False:
+        log(config, "Pre-processing disabled.")
+        return
     mode = cfg.get("mode", "local")
     has_content = bool(
         cfg.get("python_script") or cfg.get("command") or cfg.get("slurm_script")
@@ -405,6 +411,9 @@ def run_preprocess(config: dict[str, Any]) -> None:
 
 
 def run_analysis(config: dict[str, Any]) -> None:
+    if config.get("analysis", {}).get("enabled") is False:
+        log(config, "Analysis disabled.")
+        return
     _run_phase(config, "analysis", "Analysis")
 
 

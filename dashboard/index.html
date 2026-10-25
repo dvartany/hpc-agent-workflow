@@ -83,12 +83,12 @@
             <div class="button-grid">
               <button id="monitorBtn">Start Monitor</button>
               <button id="stopBtn">Stop</button>
-              <button id="preprocessBtn">Pre-process</button>
               <button id="submitBtn">Submit</button>
+              <button id="statusBtn">Queue</button>
+              <button id="preprocessBtn">Pre-process</button>
               <button id="analyzeBtn">Analyze</button>
               <button id="stopAnalysisBtn">Stop Analysis</button>
               <button id="syncBtn">Sync</button>
-              <button id="statusBtn">Queue</button>
             </div>
             <pre class="command-output" id="commandOutput" aria-live="polite"></pre>
           </aside>
@@ -97,6 +97,10 @@
             <div class="col-group">
               <fieldset>
                 <legend>Pre-processing</legend>
+                <label class="checkbox-label">
+                  <input type="checkbox" name="preprocess.enabled">
+                  Enabled
+                </label>
                 <label>Mode
                   <select name="preprocess.mode">
                     <option value="local">Local command</option>
@@ -117,9 +121,13 @@
               </fieldset>
             </div>
 
-            <div class="col-group" style="grid-column: 2">
+            <div class="col-group col2">
               <fieldset id="analysisFieldset">
                 <legend>Analysis</legend>
+                <label class="checkbox-label">
+                  <input type="checkbox" name="analysis.enabled">
+                  Enabled
+                </label>
                 <label>Mode
                   <select name="analysis.mode">
                     <option value="local">Local command</option>
@@ -135,6 +143,10 @@
 
               <fieldset id="resultsFieldset">
                 <legend>Results</legend>
+                <label class="checkbox-label">
+                  <input type="checkbox" name="sync.enabled">
+                  Enabled
+                </label>
                 <label>Remote results <input name="sync.remote_results_path" autocomplete="off"></label>
                 <label>Local results <input name="sync.local_results_path" autocomplete="off"></label>
               </fieldset>
@@ -142,7 +154,7 @@
           </div>
         </div>
 
-        <div style="grid-column: 2; display: flex; flex-direction: column; gap: 0;">
+        <div class="side-column">
           <fieldset>
             <legend>Cluster</legend>
             <label>HPC preset

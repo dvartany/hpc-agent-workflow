@@ -1,6 +1,6 @@
 # ASTRA — Automated Scheduling & Tracking for Research Applications
 
-HPC job lifecycle management dashboard. Slurm workflow manager with a local web UI and CLI backend. Submit jobs, poll status, run preprocess/analysis pipelines, sync results, and auto-restart the pipeline — all via SSH to Frontera (TACC).
+HPC job lifecycle management dashboard. Slurm workflow manager with a local web UI and CLI backend. Submit jobs, poll status, run preprocess/analysis pipelines, sync results, and auto-restart the pipeline — all via SSH to Frontera (TACC) or Perlmutter (NERSC) interchangeably.
 
 ```bash
 python3 hpc_dashboard.py          # start dashboard at http://127.0.0.1:8765
@@ -33,3 +33,14 @@ python3 hpc_agent.py <command>    # CLI: submit, status, cancel, poll, sync, ana
 ## Auto-Restart
 
 When the Restart checkbox is checked, `hpc_agent.py run --restart` loops the pipeline indefinitely: preprocess → submit → poll → analyze → sync → [restart]. Hit Stop to break the loop.
+
+## Clusters
+
+The backend is host-agnostic (plain `ssh` + Slurm), so both clusters work with the same pipeline. Use the **HPC preset** dropdown to switch:
+
+| Preset | Host | User | Remote workdir |
+|--------|------|------|----------------|
+| NERSC (Perlmutter) | `perlmutter-p1.nersc.gov` | `vartan` | `/pscratch/sd/v/vartan/2023/F2F/9-3D-new` |
+| TACC (Frontera) | `frontera.tacc.utexas.edu` | `tg848932` | `/scratch2/05594/tg848932/2023/F2F/s17_new_mpi_decay` |
+
+The active `config.toml` cluster is currently Perlmutter.

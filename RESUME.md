@@ -48,6 +48,10 @@ Start Monitor, Stop, Submit, Queue, Pre-process, Analyze, Stop Analysis, Sync
 - Buttons with `data-active` attribute show green background
 
 ## HPC presets
-- NERSC: perlmutter-p1.nersc.gov, /global/homes/u/
+- NERSC (Perlmutter): perlmutter-p1.nersc.gov, user `vartan`, /pscratch/sd/v/vartan/2023/F2F/9-3D-new
 - Polaris: polaris.alcf.anl.gov, /home/
-- TACC: frontera.tacc.utexas.edu, /home1/
+- TACC (Frontera): frontera.tacc.utexas.edu, user `tg848932`, /scratch2/05594/tg848932/2023/F2F/s17_new_mpi_decay
+- Active `config.toml` cluster: Perlmutter (`vartan@perlmutter-p1.nersc.gov`)
+
+The backend is host-agnostic — it uses `ssh` + Slurm (`sbatch`/`squeue`/`scancel`) — so
+switching clusters only requires changing the Cluster preset/fields.

@@ -58,3 +58,11 @@
 - Added "Stop babysitting individual batch jobs" closing line
 - Added detailed dashboard caption below screenshot describing left/right panels
 - Added Auto-restart feature: checkbox next to phase chain, `--restart` flag on `hpc_agent.py run`, top-level `restart = true/false` in config.toml, infinite pipeline loop until Stop
+
+## 2026-10-25
+
+- Adapted workflow to target Perlmutter (NERSC) in addition to Frontera (TACC)
+- Set NERSC preset defaults: user `vartan`, workdir `/pscratch/sd/v/vartan/2023/F2F/9-3D-new`
+- Switched active `config.toml` cluster to `perlmutter-p1.nersc.gov` / `vartan`
+- Documented both cluster presets in README, prompt.md, RESUME.md
+- Confirmed backend is host-agnostic (plain `ssh` + Slurm), so no code changes needed beyond preset/config

@@ -71,9 +71,21 @@ When `[jobs]` has entries, each script runs in `<remote_workdir>/<script_stem>/`
 
 ## Known issues / blockers
 
-- **SSH dependency** — dashboard talks to Frontera; sleep/reboot kills subprocesses
+- **SSH dependency** — dashboard talks to Frontera or Perlmutter; sleep/reboot kills subprocesses
+- **2FA** — NERSC (Perlmutter) may require an SSH key + OTP; `BatchMode=yes` in `ssh_base()` fails without a working key
 - **Phase file on SIGKILL** — `.hpc_agent_phase` not cleaned up on hard kill
 - **config.toml custom parser** — hand-rolled TOML parser does not support quoted strings with `#` or inline tables; use simple key = value only
+
+## Cluster targets
+
+The backend is host-agnostic (`ssh` + `sbatch`/`squeue`/`scancel`), so switching clusters only changes the Cluster preset/fields.
+
+| Preset | Host | User | Remote workdir |
+|--------|------|------|----------------|
+| NERSC (Perlmutter) | `perlmutter-p1.nersc.gov` | `vartan` | `/pscratch/sd/v/vartan/2023/F2F/9-3D-new` |
+| TACC (Frontera) | `frontera.tacc.utexas.edu` | `tg848932` | `/scratch2/05594/tg848932/2023/F2F/s17_new_mpi_decay` |
+
+Preset defaults live in `dashboard/app.js` (`HPC_PRESETS`). The active `config.toml` cluster is currently Perlmutter (`vartan@perlmutter-p1.nersc.gov`).
 
 ## Session closeout
 

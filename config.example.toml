@@ -1,6 +1,7 @@
 [cluster]
-# Example:
-# host = "login.frontera.tacc.utexas.edu"
+# Examples:
+#   Frontera (TACC):    host = "frontera.tacc.utexas.edu", user = "tg848932"
+#   Perlmutter (NERSC): host = "perlmutter-p1.nersc.gov", user = "vartan"
 host = "your-login-host.example.edu"
 user = "your_username"
 ssh_key = ""
