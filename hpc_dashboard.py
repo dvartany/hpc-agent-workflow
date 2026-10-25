@@ -101,6 +101,15 @@ def tail_lines(path: Path, count: int = 80) -> list[str]:
 
 def write_config(data: dict[str, Any]) -> None:
     """Serialize config dict back to TOML-ish config.toml."""
+    existing = load_config(CONFIG_PATH) if CONFIG_PATH.exists() else {}
+    current_host = (existing.get("cluster") or {}).get("host") or ""
+    incoming_cluster = data.get("cluster") or {}
+    if current_host and not incoming_cluster.get("host"):
+        if not incoming_cluster.get("user") and not incoming_cluster.get("remote_workdir"):
+            raise ValueError(
+                "Refusing to save config with an empty cluster host. "
+                "Refresh the dashboard so the current settings load, then try again."
+            )
     sections = ["cluster", "job", "sync", "analysis", "reporting", "preprocess", "jobs"]
     lines: list[str] = []
     # Top-level restart flag

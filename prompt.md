@@ -62,7 +62,8 @@ The generated `HPC_Agent_Slide_Deck.pptx` is a single slide:
 
 ## UI behaviors
 
-- On load, the **HPC preset** dropdown auto-selects based on `cluster.host` (`presetForHost()` in `app.js`): perlmutter→nersc, frontera→tacc, polaris→polaris, otherwise Custom.
+- On load, the **HPC preset** dropdown starts on NERSC (the `<option>` is `selected`). If `cluster.host` is set, `writeForm()` maps it (perlmutter→nersc, frontera→tacc, polaris→polaris, otherwise Custom); if the config is empty, it fills the NERSC preset instead of leaving Custom.
+- Actions POST the current form to `/api/config` first. `write_config()` now refuses to overwrite an existing host with an entirely empty `cluster` block (500 + "Refresh the dashboard…"), so a stale tab can no longer wipe the config. Reload the page after the server restarts.
 - Polling is every 10s, so short actions can finish between polls. The Sync action optimistically lights the Sync phase/button immediately; the standalone `sync` CLI also writes `.hpc_agent_phase=sync` for the duration.
 
 ## Pre-processing script
@@ -91,7 +92,12 @@ When `[jobs]` has entries, each script runs in `<remote_workdir>/<script_stem>/`
 - **SSH dependency** — dashboard talks to Frontera or Perlmutter; sleep/reboot kills subprocesses
 - **2FA** — NERSC (Perlmutter) may require an SSH key + OTP; `BatchMode=yes` in `ssh_base()` fails without a working key
 - **Phase file on SIGKILL** — `.hpc_agent_phase` not cleaned up on hard kill
+- **Stale config writes** — mitigated by the empty-cluster guard; if `config.toml` is ever wiped, restore with `git checkout HEAD -- config.toml` and re-add `shock_finder`
 - **config.toml custom parser** — hand-rolled TOML parser does not support quoted strings with `#` or inline tables; use simple key = value only
+
+## Recent success
+
+- Real `parfile_restart.py` run on Perlmutter (2026-10-25) completed returncode 0: shock finder parsed `skip_num=3 xmin=8.392478e+07 point_mass=2.565207e+33 iprocs=123`, wrote `flash.par.bak`, and changed 8 lines in `flash.par`.
 
 ## Cluster targets
 

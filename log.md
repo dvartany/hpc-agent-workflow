@@ -78,3 +78,6 @@
 - NERSC preset is now the initially selected dropdown option (no Custom flash on load)
 - Restored `config.toml` after a stale dashboard form wiped it to empty defaults
 - Empty config now fills the NERSC preset in the form instead of showing Custom
+- `write_config()` guard rejects an entirely empty cluster block when a host already exists (stops stale-tab wipes)
+- Real Perlmutter preprocess succeeded: shock finder parsed, `flash.par.bak` written, 8 lines changed in `flash.par`
+- Dashboard restarted on http://127.0.0.1:8765 with Perlmutter config
