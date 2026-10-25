@@ -72,6 +72,7 @@ The generated `HPC_Agent_Slide_Deck.pptx` is a single slide:
 
 - `excise point cell, mass, point mass, total mass: <skip> <excised> <point> <total>`
 - edge loop line `<index> <edge_km>` → new `xmin` in cm (`edge_km * 1e5`)
+- `Prev Total Mass, New Total Mass : <prev> <new>` → conservation check (`MASS_CONSERVATION_RTOL = 1e-6`; residual is printed, e.g. `rel err 1.40e-07`). Also handles older variants where the labels appear around the numbers.
 
 It rewrites `restart`, `checkpointFileNumber`, `plotFileNumber`, `xmin`, `point_mass`, `iProcs`, `do_move`, `skip_num`, and scales interval time/step by `(xmin/old_xmin)*1.3`. Existing inline comments are preserved; `flash.par.bak` is written and `flash.par` is replaced atomically. It exits nonzero on failure.
 

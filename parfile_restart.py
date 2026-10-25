@@ -45,6 +45,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 KEY_RE = re.compile(r"^(\s*)([A-Za-z0-9_]+)(\s*=\s*)(.*)$")
 DEFAULT_SHOCK_MODULE = "python/3.12-26.1.0"
+MASS_CONSERVATION_RTOL = 1.0e-6
 
 
 def split_value_comment(rest):
@@ -241,14 +242,23 @@ def parse_shock_output(text):
             if match:
                 xmin_km = float(match.group(2))
 
-    # Older/Frontera shock-finder variants print the previous and new totals.
+    # Current Perlmutter format prints both labels before the values:
+    #   Prev Total Mass, New Total Mass   :  <prev> <new>
     prev_total = None  # type: Optional[float]
     new_total = None  # type: Optional[float]
     match = re.search(
-        r"prev\w*\s+total\s+mass.*?([0-9.eE+\-]+).*?new\s+total\s+mass.*?([0-9.eE+\-]+)",
+        r"prev\w*\s+total\s+mass\s*,\s*new\s+total\s+mass\s*:\s*"
+        r"([0-9.eE+\-]+)\s+([0-9.eE+\-]+)",
         text,
-        re.IGNORECASE | re.DOTALL,
+        re.IGNORECASE,
     )
+    if not match:
+        # Older/Frontera shock-finder variants print the previous and new totals.
+        match = re.search(
+            r"prev\w*\s+total\s+mass.*?([0-9.eE+\-]+).*?new\s+total\s+mass.*?([0-9.eE+\-]+)",
+            text,
+            re.IGNORECASE | re.DOTALL,
+        )
     if match:
         prev_total, new_total = float(match.group(1)), float(match.group(2))
 
@@ -434,13 +444,21 @@ def main():
     if shock["prev_total"] is not None and shock["new_total"] is not None:
         prev_total = float(shock["prev_total"])
         new_total = float(shock["new_total"])
-        if abs(prev_total - new_total) > 1.0e-10 * abs(prev_total):
+        rel_err = abs(prev_total - new_total) / abs(prev_total) if prev_total else 0.0
+        if rel_err > MASS_CONSERVATION_RTOL:
             raise RuntimeError(
-                "Total mass not conserved: prev={:.6e} new={:.6e}".format(
-                    prev_total, new_total
+                "Total mass not conserved: prev={:.6e} new={:.6e} rel_err={:.2e}".format(
+                    prev_total, new_total, rel_err
                 )
             )
-        print("mass conservation: OK ({:.6e})".format(new_total))
+        if rel_err > 1.0e-10:
+            print(
+                "mass conservation: OK ({:.6e}, rel err {:.2e})".format(
+                    new_total, rel_err
+                )
+            )
+        else:
+            print("mass conservation: OK ({:.6e})".format(new_total))
     elif shock["total_mass"] is not None:
         print(
             "mass conservation: not reported by shock finder "
