@@ -89,4 +89,7 @@
 - Local fake-shock tests covered skip, force dry-run, force write, and re-run; real Perlmutter `--dry-run` (skip) and `--dry-run --force` (3 expected changes) passed; deployed to Perlmutter
 - `iProcs` now read from the checkpoint's `integer runtime parameters` (via `h5dump`, h5py fallback) and written as `checkpoint iProcs - skip_num`; no fallback to the possibly-decremented `flash.par` value
 - Verified on Perlmutter checkpoint 154: `iProcs 126 - skip_num 3 = 123`; local synthetic-HDF5 test also corrected `flash.par iProcs 120` to 123
+- Removed the early skip based on `flash.par checkpointFileNumber`; pre-process now always recomputes deterministic targets from the latest checkpoint (no repeated-decrement guard needed)
+- Interval times/steps now scale from checkpoint-stored values (`checkpoint_value * (new_xmin / checkpoint_xmin) * 1.3`), fixing the compounded `0.0856`/`0.2568` values
+- Applied on Perlmutter: `iProcs 126 -> 123`, `checkpointFileIntervalTime 0.0856161 -> 0.0177376`, `plotFileIntervalTime 0.256848 -> 0.0532129`; second run reported no changes; backup `flash.par.bak.before_iprocs_fix`
 - Dashboard restarted on http://127.0.0.1:8765 with Perlmutter config
