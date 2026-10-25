@@ -17,6 +17,7 @@ python3 hpc_agent.py <command>    # CLI: submit, status, cancel, poll, sync, ana
 | `dashboard/index.html` | UI layout — left (operations + 2x2 config) + right (cluster, job scripts, logs) |
 | `dashboard/styles.css` | Styling — grid layout, dark mode, phase/button indicators, restart toggle |
 | `config.toml` | Active config — `restart`, cluster, job, sync, analysis, preprocess, reporting |
+| `parfile_restart.py` | Dashboard-friendly FLASH restart prep: runs `shock_finder_v4.py`, updates `flash.par` (backup + atomic write) |
 | `create_slides.py` | Generates single-slide PPTX with screenshot + motivation/process/challenges |
 
 ## Layout
@@ -52,3 +53,13 @@ The active `config.toml` cluster is currently Perlmutter.
 `results/frontera/s17_new_mpi_decay`). `{hpc}` is derived from the host, `{project}` from the
 basename of `cluster.remote_workdir`. With multiple job scripts, each script adds its stem as a
 subdirectory (`results/perlmutter/9-3D-new/<script_stem>/`).
+
+## Pre-processing (`parfile_restart.py`)
+
+Runs on the login node as the first pipeline phase. From the remote workdir it:
+
+1. Runs `shock_finder_v4.py` (auto-finds it; uses a module-loaded Python with `h5py`/`scipy` when the system `python3` lacks them).
+2. Updates `flash.par`: `restart`, latest checkpoint/plot numbers, `xmin`, `point_mass`, `iProcs`, `skip_num`, `do_move`, and interval scaling.
+3. Backs up `flash.par.bak` and writes atomically. Exits nonzero on failure so the pipeline stops.
+
+Useful flags: `--dry-run` (no write), `--shock-module`, `--shock-python`, `--shock-finder`. `parfile_restart.py` is deployed to the Perlmutter workdir and enabled in `config.toml`.

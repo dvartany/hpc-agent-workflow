@@ -6,7 +6,7 @@ user = "vartan"
 remote_workdir = "/pscratch/sd/v/vartan/2023/F2F/9-3D-new"
 
 [job]
-script = "batch.sub"
+script = "flash.slurm"
 job_id_file = ".hpc_agent_job_id"
 
 [sync]

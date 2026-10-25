@@ -47,7 +47,8 @@ Config storage: `restart = true/false` is a top-level key in `config.toml`. The 
 | `dashboard/app.js` | Frontend — `restart` in fields array, read/written as checkbox via `general` → now top-level |
 | `dashboard/index.html` | UI — Restart checkbox in `.pipeline-status` div, right-aligned inline |
 | `dashboard/styles.css` | Styling — `.restart-toggle` class: flex row, auto margin-left, compact checkbox |
-| `config.toml` | Active config — `restart = false` at top, then sections |
+| `parfile_restart.py` | Dashboard-friendly FLASH restart prep: parses `shock_finder_v4.py`, rewrites `flash.par` (backup + atomic), pure-stdlib so it runs on login-node `python3` 3.6 |
+| `config.toml` | Active config — `restart = true` at top, then sections |
 | `create_slides.py` | Generates single-slide PPTX with screenshot left + motivation/process/challenges right |
 
 ## Slide deck
@@ -63,6 +64,17 @@ The generated `HPC_Agent_Slide_Deck.pptx` is a single slide:
 
 - On load, the **HPC preset** dropdown auto-selects based on `cluster.host` (`presetForHost()` in `app.js`): perlmutter→nersc, frontera→tacc, polaris→polaris, otherwise Custom.
 - Polling is every 10s, so short actions can finish between polls. The Sync action optimistically lights the Sync phase/button immediately; the standalone `sync` CLI also writes `.hpc_agent_phase=sync` for the duration.
+
+## Pre-processing script
+
+`parfile_restart.py` replaces the old hardcoded version. It runs from `cluster.remote_workdir` (or its parent if placed in a subdir), finds `shock_finder_v4.py` automatically, and parses the Perlmutter output:
+
+- `excise point cell, mass, point mass, total mass: <skip> <excised> <point> <total>`
+- edge loop line `<index> <edge_km>` → new `xmin` in cm (`edge_km * 1e5`)
+
+It rewrites `restart`, `checkpointFileNumber`, `plotFileNumber`, `xmin`, `point_mass`, `iProcs`, `do_move`, `skip_num`, and scales interval time/step by `(xmin/old_xmin)*1.3`. Existing inline comments are preserved; `flash.par.bak` is written and `flash.par` is replaced atomically. It exits nonzero on failure.
+
+The login-node `python3` is 3.6 and lacks `h5py`/`scipy`; the script is 3.6-compatible and launches the shock finder via `module load python/3.12-26.1.0` when needed. Flags: `--dry-run`, `--workdir`, `--param-file`, `--shock-finder`, `--shock-python`, `--shock-module`. Deployed at `/pscratch/sd/v/vartan/2023/F2F/9-3D-new/parfile_restart.py`; `preprocess.enabled = true` in `config.toml`.
 
 ## API endpoints
 

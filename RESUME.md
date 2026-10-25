@@ -39,6 +39,7 @@ Start Monitor, Stop, Submit, Queue, Pre-process, Analyze, Stop Analysis, Sync
 - `dashboard/app.js` — frontend logic (form, state rendering, actions)
 - `dashboard/styles.css` — styling
 - `config.toml` — active configuration
+- `parfile_restart.py` — FLASH restart prep (runs shock finder, rewrites `flash.par`; deployed on Perlmutter)
 - `.hpc_agent_job_id` — stores last Slurm job ID
 
 ## API endpoints

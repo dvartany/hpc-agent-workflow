@@ -71,3 +71,6 @@
 - HPC preset dropdown now auto-selects from cluster host on load (Perlmutter → NERSC preset)
 - Standalone Sync now sets `.hpc_agent_phase=sync`; UI lights the Sync phase and button immediately (optimistic) since sync can finish inside the 10s poll
 - Verified real sync: `results/perlmutter/9-3D-new/entr_plotter` populated
+- Rewrote `parfile_restart.py` for the dashboard: no hardcoded paths, cwd/workdir detection, parses Perlmutter shock-finder output, pure-stdlib (works on login-node Python 3.6), module fallback (`python/3.12-26.1.0`) for h5py/scipy, backup + atomic write, nonzero exit on failure
+- Integration-tested on Perlmutter with a fake shock finder (Python 3.6 + module fallback + dry-run passed)
+- Deployed to `/pscratch/sd/v/vartan/2023/F2F/9-3D-new/parfile_restart.py`; `preprocess.enabled = true`
